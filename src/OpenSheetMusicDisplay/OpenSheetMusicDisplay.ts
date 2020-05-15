@@ -81,6 +81,8 @@ export class OpenSheetMusicDisplay {
     private resizeHandlerAttached: boolean;
     private followCursor: boolean;
 
+    private musicxml: string;
+
     /**
      * Load a MusicXML file
      * @param content is either the url of a file, or the root node of a MusicXML document, or the string content of a .xml/.mxl file
@@ -117,6 +119,7 @@ export class OpenSheetMusicDisplay {
                 // Parse the string representing an xml file
                 const parser: DOMParser = new DOMParser();
                 content = parser.parseFromString(str, "application/xml");
+                this.musicxml = str;
             } else if (str.length < 2083) {
                 log.debug("[OSMD] Retrieve the file at the given URL: " + str);
                 // Assume now "str" is a URL
@@ -903,6 +906,10 @@ export class OpenSheetMusicDisplay {
     /** Returns the version of OSMD this object is built from (the version you are using). */
     public get Version(): string {
         return this.version;
+    }
+
+    public get MusicXML(): string {
+        return this.musicxml;
     }
     //#endregion
 }

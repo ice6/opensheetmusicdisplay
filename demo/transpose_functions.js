@@ -257,7 +257,7 @@
     this.parameters = parameters;
     console.log("transpose_xml: transpose_key: %s str lenL %s", parameters.transpose_key, xml_string_in.length);
     if (parameters.transpose_key == "None")
-        return;
+        return xml_string_in;
 
     show_output = this.parameters.show_output;
 

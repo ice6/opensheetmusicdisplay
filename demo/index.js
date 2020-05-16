@@ -519,7 +519,7 @@ import { OpenSheetMusicDisplay } from '../src/OpenSheetMusicDisplay/OpenSheetMus
         tranposeBtn.addEventListener('change', function(e) {
             var value = e.target.value;
             console.log('tranpose to ', value);
-            selectSampleOnChange(osmd.musicxml, value);
+            selectSampleOnChange(window.originalMusicXML || osmd.musicxml, value);
         })
     }
 
@@ -568,8 +568,8 @@ import { OpenSheetMusicDisplay } from '../src/OpenSheetMusicDisplay/OpenSheetMus
         openSheetMusicDisplay.DrawBoundingBox = value;
     }
 
-    function selectSampleOnChange(str, tranposeTo) {
-        error();
+    async function selectSampleOnChange(str, tranposeTo) {
+        error(); 
         disable();
         var isCustom = typeof str === "string";
         if (!isCustom) {
@@ -586,11 +586,21 @@ import { OpenSheetMusicDisplay } from '../src/OpenSheetMusicDisplay/OpenSheetMus
         // zoom = 1.0;
 
         setSampleSpecificOptions(str, isCustom);
-
-        if (tranposeTo !== undefined && isCustom) {
+        
+        // we only pass raw xml to load function below
+        // it is not reasonalbe to put http request facility inside a render engine
+        // it is better to remove AJAX.ts from this library
+    
+        // we assume that the if it not raw xml, then is it url. compressed musicxml not supported
+        if (str.substr(0, 6).indexOf('<?xml') < 0) {
+            let res = await fetch(str);
+            str = await res.text()
+            window.originalMusicXML = str
+        }
+        if (tranposeTo !== undefined) {
             str = osmd_transpose.transpose_xml({transpose_key: tranposeTo, transpose_dirction: "closest"}, str)
         }
-        
+
         openSheetMusicDisplay.load(str).then(
             function () {
                 // This gives you access to the osmd object in the console. Do not use in productive code

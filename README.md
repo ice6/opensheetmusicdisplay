@@ -10,6 +10,8 @@
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/opensheetmusicdisplay/opensheetmusicdisplay?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Commitizen friendly](https://img.shields.io/badge/commitizen-friendly-brightgreen.svg)](http://commitizen.github.io/cz-cli/)
 
+### warning: I made this repository just for testing `osmd_transpose` integrated with `osmd`. Not production ready, thanks.
+
 [opensheetmusicdisplay.org](https://opensheetmusicdisplay.org/)
 
 OpenSheetMusicDisplay renders MusicXML sheet music in the browser. It is the missing link between MusicXML and VexFlow. Built upon many years of experience in both sheet music interactivity and engraving, it is the perfect solution for app developers seeking to build digital sheet music services.

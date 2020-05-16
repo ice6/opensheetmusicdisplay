@@ -591,7 +591,7 @@ import { OpenSheetMusicDisplay } from '../src/OpenSheetMusicDisplay/OpenSheetMus
         // it is not reasonalbe to put http request facility inside a render engine
         // it is better to remove AJAX.ts from this library
     
-        // we assume that the if it not raw xml, then is it url. compressed musicxml not supported
+        // we assume that the if it not raw xml, then it is url. compressed musicxml not supported
         if (str.substr(0, 6).indexOf('<?xml') < 0) {
             let res = await fetch(str);
             str = await res.text()

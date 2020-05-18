@@ -11,6 +11,7 @@ import { NoteState } from "../Graphical/DrawingEnums";
 import { Notehead } from "./Notehead";
 import { Arpeggio } from "./Arpeggio";
 import { NoteType } from "./NoteType";
+import { GraphicalNote } from "../Graphical";
 /**
  * Represents a single pitch with a duration (length)
  */
@@ -70,6 +71,8 @@ export declare class Note {
      */
     private noteheadColor;
     private noteheadColorCurrentlyRendered;
+    /** Graphical note */
+    private graphicalNote;
     get ParentVoiceEntry(): VoiceEntry;
     set ParentVoiceEntry(value: VoiceEntry);
     get ParentStaffEntry(): SourceStaffEntry;
@@ -115,6 +118,8 @@ export declare class Note {
     get NoteheadColorCurrentlyRendered(): string;
     set NoteheadColorCurrentlyRendered(value: string);
     isRest(): boolean;
+    get GraphicalNote(): GraphicalNote;
+    set GraphicalNote(graphicalNote: GraphicalNote);
     /** Note: May be dangerous to use if ParentStaffEntry.VerticalContainerParent etc is not set.
      * better calculate this directly when you have access to the note's measure.
      * whole rest: length = measure length. (4/4 in a 4/4 time signature, 3/4 in a 3/4 time signature, 1/4 in a 1/4 time signature, etc.)

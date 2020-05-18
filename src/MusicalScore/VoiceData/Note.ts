@@ -83,6 +83,8 @@ export class Note {
      */
     private noteheadColor: string;
     private noteheadColorCurrentlyRendered: string;
+    /** Graphical note */
+    private graphicalNote: any;
 
     public get ParentVoiceEntry(): VoiceEntry {
         return this.voiceEntry;
@@ -217,6 +219,14 @@ export class Note {
 
     public isRest(): boolean {
         return this.Pitch === undefined;
+    }
+
+    public get GraphicalNote(): any {
+        return this.graphicalNote;
+    }
+
+    public set GraphicalNote(graphicalNote: any) {
+        this.graphicalNote = graphicalNote;
     }
 
     /** Note: May be dangerous to use if ParentStaffEntry.VerticalContainerParent etc is not set.

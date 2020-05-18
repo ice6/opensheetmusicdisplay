@@ -76,7 +76,8 @@ import { OpenSheetMusicDisplay } from '../src/OpenSheetMusicDisplay/OpenSheetMus
         debugClearBtn,
         selectPageSizes,
         printPdfBtns,
-        tranposeBtn;
+        tranposeDirectionSelector,
+        tranposeSelector;
     
     // manage option setting and resetting for specific samples, e.g. in the autobeam sample autobeam is set to true, otherwise reset to previous state
     // TODO design a more elegant option state saving & restoring system, though that requires saving the options state in OSMD
@@ -225,7 +226,8 @@ import { OpenSheetMusicDisplay } from '../src/OpenSheetMusicDisplay/OpenSheetMus
         printPdfBtns.push(document.getElementById("print-pdf-btn"));
         printPdfBtns.push(document.getElementById("print-pdf-btn-optional"));
 
-        tranposeBtn = document.getElementById('transpose_key');
+        tranposeDirectionSelector = document.getElementById('transpose_direction');
+        tranposeSelector = document.getElementById('transpose_key');
 
         //var defaultDisplayVisibleValue = "block"; // TODO in some browsers flow could be the better/default value
         var defaultVisibilityValue = "visible";
@@ -516,10 +518,13 @@ import { OpenSheetMusicDisplay } from '../src/OpenSheetMusicDisplay/OpenSheetMus
             selectSampleOnChange();
         }
 
-        tranposeBtn.addEventListener('change', function(e) {
+        tranposeSelector.addEventListener('change', function(e) {
             var value = e.target.value;
             console.log('tranpose to ', value);
             selectSampleOnChange(window.originalMusicXML || osmd.musicxml, value);
+        })
+        tranposeDirectionSelector.addEventListener('change', function(e) {
+            selectSampleOnChange(window.originalMusicXML || osmd.musicxml, tranposeSelector.value);
         })
     }
 
@@ -598,7 +603,7 @@ import { OpenSheetMusicDisplay } from '../src/OpenSheetMusicDisplay/OpenSheetMus
             window.originalMusicXML = str
         }
         if (tranposeTo !== undefined) {
-            str = osmd_transpose.transpose_xml({transpose_key: tranposeTo, transpose_dirction: "closest"}, str)
+            str = osmd_transpose.transpose_xml({transpose_key: tranposeTo, transpose_direction: tranposeDirectionSelector.value}, str)
         }
 
         openSheetMusicDisplay.load(str).then(

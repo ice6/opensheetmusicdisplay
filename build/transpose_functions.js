@@ -217,6 +217,7 @@
             else
                 key_offset = down_offset;
         }
+        console.log('key_offset', key_offset)
         
         new_fifths = this.line_of_fifths_numbers[new_key] - this.line_of_fifths_numbers["C"];
         //console.log("old_key: %s new_key: %s key_offset: %s new_fifths: %s", old_key, new_key, key_offset, new_fifths);

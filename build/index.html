@@ -144,25 +144,36 @@
     </div>
 
     <div class="column">
-        <h3 class="ui header">Tranpose To Key:</h3>
-        <select class="ui selection dropdown" id="transpose_key">
-            <option value = "None" selected>None</option>
-            <option value = "Ab">Ab / Fm</option>
-            <option value = "A">A / F#m</option>
-            <option value = "Bb" >Bb / Gm</option>
-            <option value = "B">B / G#m</option>
-            <option value = "Cb">Cb / Abm</option>
-            <option value = "C">C / Am</option>
-            <option value = "C#">C# / A#m</option>
-            <option value = "Db">Db / Bbm</option>
-            <option value = "D">D / Bm</option>
-            <option value = "Eb">Eb / Cm</option>
-            <option value = "E">E / C#m</option>
-            <option value = "F">F / Dm</option>
-            <option value = "F#">F# / D#m</option>
-            <option value = "Gb">Gb / Ebm</option>
-            <option value = "G">G / Em</option>
-        </select>
+        <h3 class="ui header">Tranpose:</h3>
+        <div style="margin-bottom: 3px;">
+            <label>Direction </label>
+            <select class="ui selection dropdown" id="transpose_direction">
+                <option value="closest" selected>Closest</option>
+                <option value="up">Move Notes Up</option>
+                <option value="down">Move Notes Down</option>
+            </select>
+        </div>
+        <div>
+            <label>Key &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</label>
+            <select class="ui selection dropdown" id="transpose_key">
+                <option value = "None" selected>None</option>
+                <option value = "Ab">Ab / Fm</option>
+                <option value = "A">A / F#m</option>
+                <option value = "Bb" >Bb / Gm</option>
+                <option value = "B">B / G#m</option>
+                <option value = "Cb">Cb / Abm</option>
+                <option value = "C">C / Am</option>
+                <option value = "C#">C# / A#m</option>
+                <option value = "Db">Db / Bbm</option>
+                <option value = "D">D / Bm</option>
+                <option value = "Eb">Eb / Cm</option>
+                <option value = "E">E / C#m</option>
+                <option value = "F">F / Dm</option>
+                <option value = "F#">F# / D#m</option>
+                <option value = "Gb">Gb / Ebm</option>
+                <option value = "G">G / Em</option>
+            </select>
+        </div>
     </div>
 </div>
 <div id="optionalControls" style="opacity: 0.0; width: 95%; display: block">

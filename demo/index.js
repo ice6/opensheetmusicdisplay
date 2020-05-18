@@ -600,9 +600,9 @@ import { OpenSheetMusicDisplay } from '../src/OpenSheetMusicDisplay/OpenSheetMus
         if (str.substr(0, 6).indexOf('<?xml') < 0) {
             let res = await fetch(str);
             str = await res.text()
-            window.originalMusicXML = str
         }
         if (tranposeTo !== undefined) {
+            window.originalMusicXML = str
             str = osmd_transpose.transpose_xml({transpose_key: tranposeTo, transpose_direction: tranposeDirectionSelector.value}, str)
         }
 
@@ -819,7 +819,7 @@ import { OpenSheetMusicDisplay } from '../src/OpenSheetMusicDisplay/OpenSheetMus
         // Read dragged file
         var reader = new FileReader();
         reader.onload = function (res) {
-            selectSampleOnChange(res.target.result);
+            selectSampleOnChange(res.target.result, tranposeSelector.value);
         };
         var filename = event.dataTransfer.files[0].name;
         if (filename.toLowerCase().indexOf(".xml") > 0

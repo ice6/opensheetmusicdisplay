@@ -217,7 +217,6 @@
             else
                 key_offset = down_offset;
         }
-        console.log('key_offset', key_offset)
         
         new_fifths = this.line_of_fifths_numbers[new_key] - this.line_of_fifths_numbers["C"];
         //console.log("old_key: %s new_key: %s key_offset: %s new_fifths: %s", old_key, new_key, key_offset, new_fifths);
@@ -315,12 +314,6 @@
         for (ii = 0; ii < str_in.length; ii++)
         {
             sline = str_in[ii];
-            // skip note-size alike, conflict with note element
-            if (sline.indexOf('<note-') > -1) {
-                str_out += sline;
-                str_out += "\n";
-                continue;
-            }
             if (show_output)
                 console.log("sline: %s", sline);
 
@@ -391,6 +384,14 @@
                 if (sline == "")
                     continue;
                 // otherwise pass through
+            }
+
+
+            // skip note-size alike, conflict with note element
+            if (sline.indexOf('<note-') > -1) {
+                str_out += sline;
+                str_out += "\n";
+                continue;
             }
 
 
@@ -640,7 +641,7 @@
                 else if (note.pitch.octave < 4)
                     note.stem = "up";
                 else if (note.pitch.step == "B")
-                    note.stem = "down";
+                    note.stem = "down"; // octave 3 - B
                 else
                     note.stem = "up";
 
@@ -752,7 +753,7 @@
 
 
                 bass_xml = `<bass>\n`;
-                bass_xml = ` <bass-step>` + transposed_note.step + `</bass-step>\n`;
+                bass_xml += ` <bass-step>` + transposed_note.step + `</bass-step>\n`;
                 if (transposed_note.alter != 0)
                 bass_xml += ` <bass-alter>` + transposed_note.alter + `</bass-alter>\n`;
 

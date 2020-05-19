@@ -302,6 +302,7 @@
         pitch_values = {};
         in_root = false;
         in_bass = false;
+        let in_rest = false;
 
 
         last_note_duration = 0;
@@ -401,7 +402,8 @@
             {
                 in_note = true;
 
-                note = {rest: null, chord: null, pitch: null, duration: null, voice: null, type: null, dot: null, accidental: null, stem: null, staff: null};
+                note = {rest: null, chord: null, grace: null,
+                    pitch: null, duration: null, tie: null, voice: null, type: null, dot: null, accidental: null, stem: null, staff: null};
 
                 note_start = sline.trim(); // to put out later
                 additional_note_items = "";
@@ -425,10 +427,10 @@
             } 
             if (sline.indexOf("</note") >= 0)
             {
-                note_xml = note_start + "\n";;
+                note_xml = note_start + "\n";
                 if (note.rest)
                 {
-                    note_xml += ` <rest/>\n`;
+                    note_xml += note.rest;
                 }
 
                 if (note.chord)
@@ -436,6 +438,8 @@
                     note_xml += ` <chord/>\n`;
                 }
                 
+                if (note.grace)
+                    note_xml += note.grace;   // exactly as found
 
                 if (note.pitch)
                 {
@@ -516,12 +520,14 @@
 
                 if (note.duration !== null)
                     note_xml += ` <duration>` + note.duration + `</duration>\n`;
+                if (note.tie)
+                    note_xml += note.tie;   // exactly as found
                 if (note.voice !== null)
                     note_xml += ` <voice>` + note.voice + `</voice>\n`;
                 if (note.type)
                     note_xml += ` <type>` + note.type + `</type>\n`;
                 if (note.dot)
-                    note_xml += ` <dot>` + note.dot + `</dot>\n`;
+                    note_xml += `<dot/>\n`;
                 if (note.accidental && note.accidental != "")
                 {
                     if (show_debugs)
@@ -558,6 +564,24 @@
                     //console.log("note.duration: %s", note.duration);
                     continue;   // output later
                 }
+
+                if (sline.indexOf("<grace") >= 0)
+                {
+                    note.grace = sline + "\n";   // save entire line
+                    console.log("note.grace: %s", note.grace);
+                    continue;   // output later
+                }
+
+                if (sline.indexOf("<tied") >= 0)
+                {
+                    // pass through
+                }
+                else if (sline.indexOf("<tie") >= 0)
+                {
+                    note.tie = sline + "\n";   // save entire line
+                    console.log("note.tie: %s", note.tie);
+                    continue;   // output later
+                }
                 if (sline.indexOf("<voice>") >= 0)
                 {
                     note.voice = this.get_xml_number(sline);
@@ -581,11 +605,31 @@
                     //console.log("note.staff: %s", note.staff);
                     continue;   // output later
                 }
-                if (sline.indexOf("<rest") >= 0)
+                // <rest>
+                // <display-step>C</display-step>
+                // <display-octave>4</display-octave>
+                // </rest>
+                // or
+                // <rest/>
+                if (sline.indexOf("<rest/>") >= 0)
                 {
-                    note.rest = true;
+                    note.rest = sline.trim() + "\n";
                     //console.log("note.rest: %s", note.rest);
                     continue;   // output later
+                }
+                if (sline.indexOf("<rest>") >= 0)
+                {
+                    note.rest = sline.trim() + "\n";
+                    in_rest = true;
+                    //console.log("note.rest: %s", note.rest);
+                    continue;   // output later
+                }
+                if (in_rest)
+                {
+                    note.rest += sline.trim() + "\n";
+                    if (sline.indexOf("</rest>") >= 0)
+                        in_rest = false;
+                    continue;
                 }
                 if (sline.indexOf("<chord") >= 0)
                 {

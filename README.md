@@ -7,6 +7,12 @@
 
 OpenSheetMusicDisplay renders MusicXML sheet music in the browser. It is the missing link between MusicXML and VexFlow. Built upon many years of experience in both sheet music interactivity and engraving, it is the perfect solution for app developers seeking to build digital sheet music services.
 
+Demonstration Pages
 
-To contact us leave comments on the issues page: https://github.com/ice6/opensheetmusicdisplay/issues
+- [Demonstration](https://opensheetmusicdisplay.github.io/demo/)
+
+- [Testing Page](https://ice6.github.io/opensheetmusicdisplay/transpose/transpose.htm)
+
+
+To contact us leave comments on the [issues page](https://github.com/ice6/opensheetmusicdisplay/issues)
 

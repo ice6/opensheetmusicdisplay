@@ -9,7 +9,7 @@ OpenSheetMusicDisplay renders MusicXML sheet music in the browser. It is the mis
 
 Demonstration Pages
 
-- [Demonstration](https://opensheetmusicdisplay.github.io/demo/)
+- [Transpose Demonstration](https://ice6.github.io/opensheetmusicdisplay/build/)
 
 - [Testing Page](https://ice6.github.io/opensheetmusicdisplay/transpose/transpose.htm)
 

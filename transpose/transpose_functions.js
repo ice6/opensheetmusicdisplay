@@ -11,38 +11,110 @@
         // scan from <step>D</step>
         this.get_xml_value = function(sline)
         {
-            ipos = sline.indexOf("<");
+            let ipos = sline.indexOf("<");
             if (ipos < 0)
                 return("");
 
-            stext = sline.substr(ipos);
+            let stext = sline.substr(ipos);
             // skip first <>
-            ipos2 = stext.indexOf(">");
+            let ipos2 = stext.indexOf(">");
             stext = stext.substr(ipos2+1);
-            ipos3 = stext.indexOf("<");
+            let ipos3 = stext.indexOf("<");
             stext = stext.substr(0, ipos3);
             return(stext);
         }
 
         this.get_xml_number = function(sline)
         {
-            value = this.get_xml_value(sline);
+            let value = this.get_xml_value(sline);
             if (value == "")
                 value = 0;
             return (Number(value));
         }
+
+        // <dynamics default-x="6.58" default-y="-40.00" relative-y="-40.00">
+        this.get_xml_attribute = function(sline, name)
+        {
+            let ipos = sline.indexOf("<");
+            if (ipos < 0)
+            {   
+                console.log("VALUE NOT FOUND: %s in SLINE: %s", name, sline);
+                return("");
+            }
+
+            let stext = sline.substr(ipos + 1);
+            let ipos2 = stext.indexOf(" ");
+            if (ipos2 >= 0)
+                stext = stext.substr(ipos2 + 1);
+
+            // skip first <>
+            let ipos3 = stext.indexOf(name + "=");
+            if (ipos3 < 0)
+            {   
+                console.log("VALUE NOT FOUND: %s in SLINE: %s STEXT: %s", name, sline, stext);
+                return("");
+            }
+            stext = stext = stext.substr(ipos3);
+
+            let ipos4 = stext.indexOf("=");
+            if (ipos4 < 0)
+            {   
+                console.log("VALUE NOT FOUND: %s in SLINE: %s STEXT: %s", name, sline, stext);
+                return("");
+            }
+
+            stext = stext.substr(ipos4 + 1);
+            stext = stext.trim();
+
+            //console.log("stext.substr(0,1): %s ==: %s", stext.substr(0,1), stext.substr(0,1) == '"');
+            if (stext.substr(0,1) == '"')
+            {
+                // strip off quotes - we are not scanning for nested quotes
+                stext = stext.substr(1);
+                let ipos5 = stext.indexOf('"');
+                //console.log("IPOS5: %s", ipos5);
+                if (ipos5 >= 0)
+                {
+                    svalue = stext.substr(0, ipos5);
+                    return(svalue);
+                }
+                console.log("VALUE NOT FOUND: %s in SLINE: %s STEXT: %s", name, sline, stext);
+            
+            }
+
+            if (stext.substr(0,1) == "'")
+            {
+                // strip off quotes - we are not scanning for nested quotes
+                stext = stext.substr(1);
+                let ipos5 = stext.indexOf("'");
+                if (ipos5 >= 0)
+                {
+                    svalue = stext.substr(0, ipos5);
+                    return(svalue);
+                }
+            
+            }
+
+
+            console.log("VALUE NOT FOUND: %s in SLINE: %s STEXT: %s", name, sline, stext);
+            return("");
+
+        }
+
+        this.get_xml_attribute_number = function(sline, name)
+        {
+            let value = this.get_xml_attribute(sline, name);
+            if (value == "")
+                value = 0;
+            //console.log("SLINE: %s NAME: %s VALUE: %s", sline, name, value);
+            return (Number(value));
+        }
+
+
+
     }).apply(osmd_transpose);    
      
 
-    osmd_transpose.back = function() {
-        console.log("BACK id: %s", this.id); 
-        return this.id--;    
-    }
-
- 
-
-    osmd_transpose.back();
-    osmd_transpose.back();
 
 
     // this has to mave room for offsets of -12 to 12
@@ -175,36 +247,67 @@
         "B" : 6,      
     };
 
+    osmd_transpose.note_from_step = ["C", "D", "E", "F", "G", "A", "B"];
+
+    // this is the center line note and octave for each clef sign and line
+    osmd_transpose.clef_positions = [];
+    //                   Sign Line
+    osmd_transpose.clef_positions["G"] = [];
+    osmd_transpose.clef_positions["G"][1] = {middle_letter: "D", middle_octave: 5, middle_number: 1};
+    osmd_transpose.clef_positions["G"][2] = {middle_letter: "B", middle_octave: 4, middle_number: 6};
+    osmd_transpose.clef_positions["G"][3] = {middle_letter: "G", middle_octave: 4, middle_number: 4};
+    osmd_transpose.clef_positions["G"][4] = {middle_letter: "E", middle_octave: 4, middle_number: 2};
+    osmd_transpose.clef_positions["G"][5] = {middle_letter: "C", middle_octave: 4, middle_number: 0};
+
+
+    osmd_transpose.clef_positions["F"] = [];
+    osmd_transpose.clef_positions["F"][1] = {middle_letter: "C", middle_octave: 3, middle_number: 0};
+    osmd_transpose.clef_positions["F"][2] = {middle_letter: "A", middle_octave: 3, middle_number: 5};
+    osmd_transpose.clef_positions["F"][3] = {middle_letter: "F", middle_octave: 3, middle_number: 3};
+    osmd_transpose.clef_positions["F"][4] = {middle_letter: "D", middle_octave: 3, middle_number: 1};
+    osmd_transpose.clef_positions["F"][5] = {middle_letter: "B", middle_octave: 2, middle_number: 6};
+
+
+    osmd_transpose.clef_positions["C"] = [];
+    osmd_transpose.clef_positions["C"][1] = {middle_letter: "G", middle_octave: 4, middle_number: 4};
+    osmd_transpose.clef_positions["C"][2] = {middle_letter: "E", middle_octave: 4, middle_number: 2};
+    osmd_transpose.clef_positions["C"][3] = {middle_letter: "C", middle_octave: 4, middle_number: 0};
+    osmd_transpose.clef_positions["C"][4] = {middle_letter: "A", middle_octave: 3, middle_number: 5};
+    osmd_transpose.clef_positions["C"][5] = {middle_letter: "F", middle_octave: 3, middle_number: 3};
+  
+
     osmd_transpose.old_key;
     osmd_transpose.new_key;
 
+    osmd_transpose.measure_data_array = [];
+
     osmd_transpose.transpose = function(old_step, old_alter, old_octave) 
     {
-        var parameters = this.parameters;
-        show_output = parameters.show_output;
+        let parameters = this.parameters;
+        let show_output = parameters.show_output;
 
         if (show_output)
             console.log("transpose(): old_step: %s old_alter: %s old_octave: %s", old_step, old_alter, old_octave)
-        old_note = old_step;
+        let old_note = old_step;
         if (old_alter == 1)
             old_note += "#";
         else if (old_alter == -1)
             old_note += "b";
 
         // move to local variables for easier access
-        var old_key = this.old_key;
-        var new_key = this.new_key;
+        let old_key = this.old_key;
+        let new_key = this.new_key;
         
         
         if (show_output)
             console.log("old_key: %s new_key: %s old_note: %s", old_key, new_key, old_note);
 
-        old_key_number = this.note_numbers[old_key];
-        new_key_number = this.note_numbers[new_key];
-        var key_offset = new_key_number - old_key_number;
+        let old_key_number = this.note_numbers[old_key];
+        let new_key_number = this.note_numbers[new_key];
+        let key_offset = new_key_number - old_key_number;
 
-        up_offset = (key_offset + 12) % 12; // move up
-        down_offset = (key_offset - 12) % 12; // move down
+        let up_offset = (key_offset + 12) % 12; // move up
+        let down_offset = (key_offset - 12) % 12; // move down
 
         if (parameters.transpose_direction == "up")
             key_offset = up_offset; // move up
@@ -220,19 +323,19 @@
                 key_offset = down_offset;
         }
         
-        new_fifths = this.line_of_fifths_numbers[new_key] - this.line_of_fifths_numbers["C"];
+        let new_fifths = this.line_of_fifths_numbers[new_key] - this.line_of_fifths_numbers["C"];
         //console.log("old_key: %s new_key: %s key_offset: %s new_fifths: %s", old_key, new_key, key_offset, new_fifths);
 
-        kpos1 = this.line_of_fifths_numbers[old_key];
-        kpos2 = this.line_of_fifths_numbers[new_key];
-        fifths_offset = kpos2 - kpos1;
-        npos1 = this.line_of_fifths_numbers[old_note]; 
-        npos2 = npos1 + fifths_offset;
-        new_note = this.line_of_fifths[npos2];
+        let kpos1 = this.line_of_fifths_numbers[old_key];
+        let kpos2 = this.line_of_fifths_numbers[new_key];
+        let fifths_offset = kpos2 - kpos1;
+        let  npos1 = this.line_of_fifths_numbers[old_note]; 
+        let npos2 = npos1 + fifths_offset;
+        let new_note = this.line_of_fifths[npos2];
         //console.log("npos1: %s npos2: %s fifths_offset: %s new_note: %s",
         //    npos1, npos2, fifths_offset, new_note);
-        new_step = new_note.substr(0,1);
-        new_alter = "";
+        let new_step = new_note.substr(0,1);
+        let new_alter = "";
         if (new_note.substr(1,1) == '#')
             new_alter = "1";
         else if (new_note.substr(1,1) == 'b')
@@ -241,10 +344,10 @@
         // offset octave
         //old_note_number = this.note_numbers[old_note];
         //new_note_number = this.note_numbers[new_note];
-        old_step_number = this.step_number[old_step];
-        new_step_number = this.step_number[new_step];
+        let old_step_number = this.step_number[old_step];
+        let new_step_number = this.step_number[new_step];
 
-        new_octave = Number(old_octave);    // ADH - calculate change of octave
+        let new_octave = Number(old_octave);    // ADH - calculate change of octave
         if (key_offset > 0 && new_step_number < old_step_number)
             new_octave += 1;
         else if (key_offset < 0 && new_step_number > old_step_number)
@@ -271,10 +374,16 @@
     // song_name - not currently used
     // show_output - true to show all console.logs
 
+    osmd_transpose.str_out = "";
+    osmd_transpose.pass = 0;
+
+
+
+    
     osmd_transpose.transpose_xml = function(parameters, xml_string_in)
     {
         this.parameters = parameters;
-        var xml_string = xml_string_in;
+        let xml_string = xml_string_in;
 
         console.log("transpose_xml: transpose_key: %s xml_string_in.length: %s", parameters.transpose_key, xml_string_in.length);
         if (parameters.transpose_key == "None")
@@ -282,43 +391,77 @@
 
         show_output = this.parameters.show_output;
 
-
-
         // move to local variables for easier access
-        var old_key = this.old_key;
-        var new_key = this.new_key;
+        let old_key = this.old_key;
+        let new_key = this.new_key;
 
-        
-        str_out = "";
-        in_note = false;
-        in_measure = false;
-        if (show_output)
-            console.log("xml_string length: %s", xml_string.length);
-        str_in = xml_string.split("\n");
+        let str_in = xml_string.split("\n");
         if (show_output)
             console.log("transpose_xml lines: %s", str_in.length);
 
-        in_pitch = false;
-        pitch_values = {};
-        in_root = false;
-        in_bass = false;
-        let in_rest = false;
+        // in pass 1 we get certain parameters per measure
+        // to start with just the number of voices
+        for (this.pass = 1; this.pass <= 2; this.pass++)
+        {
+            console.log("\n*** this.pass %s ***\n", this.pass);
+
+            this.str_out = "";
+
+            // save data for elements
+        
+        
 
 
-        last_note_duration = 0;
-        last_stem_direction = "";
+
+
+        
+            // what type of element are we in?
+            let in_type = {measure: false, clef: false, note: false, rest: false, 
+                pitch: false, root: false , bass: false, notations: false, lyric: false};
+            
+
+            
+            let clef_number = null;
+            let note = {};
+            let clef = {};
+            let clef_data = []; // for stem direction
+        
+        
+
+
+
+
+            this.last_stem = [];    // store for octave and voice
         this.current_accidentals = []; // accidental for octave and note
 
-        measure_count = 0; // measure count
-        divisions = 0;
-        show_debugs = false;    // to display output for only certain measures
+            let measure_number = 0; // measure count
+            
+            let divisions = 0;
+            let show_debugs = false;    // to display output for only certain measures
+            let measure_data = {};
+        
 
 
-        for (ii = 0; ii < str_in.length; ii++)
+            //str_out = "this.pass: " + this.pass + "\n";
+
+            if (this.pass == 1)
+            {
+                this.measure_data_array = [];
+            }
+            else if (this.pass == 2)
+            {
+                //console.log("MEASURE_DATA_ARRAY[1]: %s", this.measure_data_array[1].measure_number);
+            }
+            measure_data = {};  // no measure yet
+            measure_number = 0; // measure count
+            for (let iline = 0; iline < str_in.length; iline++)
         {
-            sline = str_in[ii];
-            if (show_output)
-                console.log("sline: %s", sline);
+                let sline = str_in[iline];
+                if (show_output && this.pass == 2)
+                    console.log("%s sline: %s", iline, sline);
+
+                //if (this.pass == 2)
+                //    console.log("%s sline: %s", iline, sline);
 
             //  divisions element indicates how many divisions per quarter note are used to indicate a note's duration
             //  <divisions>256</divisions>
@@ -326,21 +469,174 @@
             {
                 divisions = this.get_xml_number(sline);
                 if (show_output)
-                    console.log("divisions: %s", divisions);
+                        console.log("divisions: %s SLINE: %s", divisions, sline);
+                }
+
+                if (sline.indexOf("<clef-octave-change>") >= 0)
+                {
+                    if (in_type.clef)
+                    {
+                        clef.octave_change = this.get_xml_number(sline);
+                        //console.log("clef.octave_change: %s", clef.octave_change);
+                    }
+                    else
+                    {
+                        console.log("item not in clef element: " + sline);
+                    }
+                    
+                    this.add_to_output(sline); // copy to output
+                    continue;   // to not confuse woth <clef ...
+                }
+                
+                if (sline.indexOf("<clef") >= 0)
+                {
+                    /***
+                    <clef number="1">
+                    <sign>G</sign>
+                    <line>2</line>
+                    </clef>
+                    <clef number="2">
+                        <sign>F</sign>
+                        <line>4</line>
+                        </clef>
+                    </attributes>
+
+                    or just
+    f
+                    <clef number="1">
+
+                    and perhaps
+                    <clef-octave-change>-1</clef-octave-change>
+
+                    ***/
+                    // we want to ocrtave and note on the middle line
+                    // note: muse_score does not use clef numbers
+                    if (sline.indexOf("<clef>") >= 0)
+                        clef_number = 0;
+                    else
+                        clef_number = this.get_xml_attribute_number(sline, "number");
+                    in_type.clef = true;
+                    clef = {number: clef_number, sign: null, line: null, octave_change: 0, middle_octave: 0, 
+                            middle_number: 0, middle_letter: ""}
+                    //console.log("<CLEF: number: %s SLINE: %s", clef_number, sline);
+                    
+
+                    // fall through to output
+
+                }
+
+                if (sline.indexOf("</clef") >= 0)
+                {
+                    
+                    // we want the octave and note step number of the middle line.
+                    // step_mumbers:
+                    //  C D E F G A B
+                    //  0 1 2 3 4 5 6
+                    clef_position = this.clef_positions[clef.sign][clef.line];
+                    if (clef_position)
+                    {
+                        // we can transpose this clef
+                        clef.do_transpose = true;
+                        clef.middle_letter = clef_position.middle_letter;
+                        clef.middle_number = clef_position.middle_number;
+                        clef.middle_octave = clef_position.middle_octave;
+                        if (clef.octave_change)
+                        {
+                            clef.middle_octave += clef.octave_change;
+                            //console.log("OCTAVE CHANGE: %s new middle_octave: %s", clef.octave_change, clef.middle_octave);
+                        }
+                        //console.log("</CLEF: %s SIGN: %s LINE: %s middle: %s %s octave: %s",
+                         //s   clef.number, clef.sign, clef.line, clef.middle_number, clef.middle_letter, clef.middle_octave)
+                    }
+                    // remove all these when working
+                    else
+                    {
+                        if (clef.sign == "G")
+                        {
+                            //clef.middle_number = "B";
+                            // 2 --> 6   3 --> 
+                            clef.middle_number = (6 + 4 - clef.line * 2) % 7;    // G2 is standard
+                            //console.log("CLEF SIGN: %s LINE: %s middle_number: %s", clef.sign, clef.line, clef.middle_number);
+                            clef.middle_letter = this.note_from_step[clef.middle_number];
+                            clef.middle_octave = 3;
+                            if (clef.line < 2)
+                                clef.middle_octave++;
+                        }
+                        else if (clef.sign == "F")
+                        {
+                            // F4 --> D, F5 --> A
+                            //clef.middle_number = "D";
+                            clef.middle_number = (1 + 8 -  - clef.line * 2) % 7;    // F4 is standard
+                            clef.middle_letter = this.note_from_step[clef.middle_number];
+                            clef.middle_octave = 2;
+                            if (clef.line > 4)
+                                clef.middle_octave--;
+                        }
+                        else if (clef.sign == "C")
+                        {
+                            // F4 --> D, F5 --> A
+                            //clef.middle_number = "D";
+                            clef.middle_number = (1 + 8 -  - clef.line * 2) % 7;    // F4 is standard
+                            clef.middle_letter = this.note_from_step[clef.middle_number];
+                            clef.middle_octave = 2;
+                            if (clef.line > 4)
+                                clef.middle_octave--;
+                        }
+                        else
+                        {
+                            console.log("Unknown clef sign: %s", sline);
+                        }
+                    }
+                
+                    clef_data[clef_number] = clef;
+                    
+                    
+                    // fall through to output
+
+                }
+
+                if (in_type.clef)
+                {
+                    if (sline.indexOf("<sign") >= 0)
+                    {
+                        clef.sign = this.get_xml_value(sline);
+                        //console.log("clef.sign: %s", clef.sign); 
+                        
+
+
+                    }
+                    if (sline.indexOf("<line") >= 0)
+                    {
+                        clef.line = this.get_xml_number(sline);
+                        //console.log("clef.line: %s", clef.line);
+                            
+
+
+                    }
+                    // fall through to output
             }
 
             if (sline.indexOf("<measure") >= 0)
             {
                 // break grouped notes at measure
-                measure_count++;
+                    measure_number++;
                 if (show_output)
-                    console.log("MEASURE: %s: %s", measure_count, sline);
-                //if (measure_count < 15)
+                        console.log("MEASURE: %s: %s", measure_number, sline);
+
+                    if (this.pass == 1)
+                    {
+                        this.measure_data_array[measure_number] = {measure_number: measure_number,
+                            min_voice: null, max_voice: null};
+                        //console.log("measure_data_array SET this.pass 1: measure_number: %s measure_data_array set: %s", 
+                        //   measure_number, this.measure_data_array[measure_number].measure_number);
+                    }
+                    measure_data = this.measure_data_array[measure_number];
+
+                    //if (measure_number < 15)
                 //    show_debugs = true;
-                //if (measure_count > 16)
+                    //if (measure_number > 16)
                 //    show_debugs = false;
-                last_note_duration = 0;
-                last_stem_direction = "";
+                    this.last_stem = [];    // restart stem information
 
   	
 	            this.current_accidentals = [];
@@ -352,81 +648,83 @@
             {
             }
 
-            // stop here for testing
-            if (sline.indexOf("xxx<work") >= 0)
-            {
-                console.log("STOP FOR TESTING");
-                break;
-            }
-
             // <fifths>-4</fifths>
             if (sline.indexOf("</fifths") >= 0)
             {
-                fifths = this.get_xml_number(sline);
+                    let fifths = this.get_xml_number(sline);
                 if (show_output)
                     console.log("SLINE: %s fifths: %s", sline, fifths);
-                line_of_fifths_c = this.line_of_fifths_numbers["C"];
-                old_key_number = fifths + line_of_fifths_c;
+                    let line_of_fifths_c = this.line_of_fifths_numbers["C"];
+                    let old_key_number = fifths + line_of_fifths_c;
                 this.old_key = this.line_of_fifths[old_key_number];
                 if (show_output)
                     console.log("fifths: %s old_key_number: %s old_key: %s", fifths, old_key_number, this.old_key);
 
                 this.new_key = parameters.transpose_key;
-                new_line_of_fifths_number = this.line_of_fifths_numbers[this.new_key] - line_of_fifths_c;
+                    let new_line_of_fifths_number = this.line_of_fifths_numbers[this.new_key] - line_of_fifths_c;
                 if (show_output)
                     console.log("<fifths>%s</fifths> old_key: %s new_key: %s \n", new_line_of_fifths_number, this.old_key, this.new_key);
-                str_out += `<fifths>` + new_line_of_fifths_number+ `</fifths>\n`;
+                        
+                    this.add_to_output(`<fifths>` + new_line_of_fifths_number + `</fifths>`);
                 
                 this.current_accidentals = [];
 
                 // musescore puts mode on the same line as fifths
-                ipos = sline.indexOf("</fifths");
+                    let ipos = sline.indexOf("</fifths");
                 sline = sline.substr(ipos + 9);
                 sline = sline.trim();
  
                 if (sline == "")
-                    continue;
-                // otherwise pass through
+                        continue;   // nothing left
+                    // fall thorugh to output
+
             }
 
 
             // skip note-size alike, conflict with note element
-            if (sline.indexOf('<note-') > -1) {
-                str_out += sline;
-                str_out += "\n";
-                continue;
+                if (sline.indexOf('<note-') > -1) 
+                {
+                    this.add_to_output(sline); // copy to output
+                    continue;   // to not confuse woth <note ,,,
             }
 
 
             if (sline.indexOf("<note") >= 0)
             {
-                in_note = true;
+                    in_type.note = true;
 
-                note = {rest: null, chord: null, grace: null,
-                    pitch: null, duration: null, tie: null, voice: null, type: null, dot: null, accidental: null, stem: null, staff: null};
+                    // preset voice and staff in case they are not set
+                    // staff 0 and voice 0 do not get written out
+                    note = {rest: null, chord: null, pitch: null, duration: null, 
+                        instrument: null, voice: 0, type: null, dot: null, accidental: null, stem: null, staff: 0,
+                        notations: null, lyric: null };
 
                 note_start = sline.trim(); // to put out later
                 additional_note_items = "";
 
-                /***
-                  <note default-x="105.68" default-y="-255.00">
-                    <chord/>
-                    <pitch>
-                    <step>F</step>
-                    <octave>2</octave>
-                    </pitch>
-                    <duration>4</duration>
-                    <voice>5</voice>
-                    <type>quarter</type>
-                    <stem>up</stem>
-                    <staff>2</staff>
-                    </note>
-                 */
-                continue;
+                    continue; // output after </note
+
 
             } 
             if (sline.indexOf("</note") >= 0)
             {
+                    if (this.pass == 1)
+                    {
+                        if (note.voice > 0)
+                        {
+                            if (!measure_data.min_voice)
+                                measure_data.min_voice = note.voice;
+                            else 
+                                measure_data.min_voice = Math.min(measure_data.min_voice, note.voice);
+                            if (!measure_data.max_voice)
+                                measure_data.max_voice = note.voice;
+                            else 
+                                measure_data.max_voice = Math.max(measure_data.max_voice, note.voice);
+                        }
+                        //console.log("SKIP IN PASS 1");
+
+                    }
+
                 note_xml = note_start + "\n";
                 if (note.rest)
                 {
@@ -443,23 +741,26 @@
 
                 if (note.pitch)
                 {
+                        note.pitch.step = transposed_note.step;
+                        note.pitch.alter = transposed_note.alter;
+                        note.pitch.octave = transposed_note.octave;
 
                     pitch_xml = ` <pitch>\n`;
-                    pitch_xml += `  <step>` + transposed_note.step + `</step>\n`;
-                    snew_step = transposed_note.step;
-                    snew_note = transposed_note.step;
+                        pitch_xml += `  <step>` + note.pitch.step + `</step>\n`;
+                        snew_step = note.pitch.step;
+                        snew_note = note.pitch.step;
                     new_accidental = "";
-                    if (transposed_note.alter == 1)
+                        if (note.pitch.alter == 1)
                     {
                         new_accidental = "sharp";
                         snew_note = snew_note + "#";
-                        pitch_xml += `  <alter>` + transposed_note.alter + `</alter>\n`;
+                            pitch_xml += `  <alter>` + note.pitch.alter + `</alter>\n`;
                     }
-                    else if (transposed_note.alter == -1)
+                        else if (note.pitch.alter == -1)
                     {
                         new_accidental = "flat";
                         snew_note = snew_note + "b";
-                        pitch_xml += `  <alter>` + transposed_note.alter + `</alter>\n`;
+                            pitch_xml += `  <alter>` + note.pitch.alter + `</alter>\n`;
                     }
                     
 
@@ -470,8 +771,8 @@
 
                     //current_accidental = current_accidentals[note.voice][note.pitch.octave][snew_note];
                     if (show_output)
-                        console.log("snew_note: %s transposed_note.alter: %s note.voice: %s note.pitch.octave: %s current_accidental: %s new_accidental: %s",
-                            snew_note, transposed_note.alter, note.voice, note.pitch.octave, current_accidental,  new_accidental);
+                            console.log("snew_note: %s note.pitch.alter: %s note.voice: %s note.pitch.octave: %s current_accidental: %s new_accidental: %s",
+                                snew_note, note.pitch.alter, note.voice, note.pitch.octave, current_accidental,  new_accidental);
 
                 
                     if (current_accidental == new_accidental)
@@ -487,34 +788,115 @@
                         note.accidental = new_accidental;
                     }
                     if (show_debugs)
-                        console.log("snew_note: %s transposed_note.alter: %s new_accidental: %s snew_note: %s note.accidental: %s",
-                            snew_note, transposed_note.alter, new_accidental, snew_note, note.accidental);
+                            console.log("snew_note: %s note.pitch.alter: %s new_accidental: %s snew_note: %s note.accidental: %s",
+                                snew_note, note.pitch.alter, new_accidental, snew_note, note.accidental);
 
+                        // we should not need this
+                        this.current_accidentals[note.voice][note.pitch.octave][snew_step] = new_accidental;
+
+                        pitch_xml += `  <octave>` + note.pitch.octave + `</octave>\n`;
+                        pitch_xml += ` </pitch>\n`;
+                
+                        note_xml += pitch_xml;
+                        pitch_xml = "PTCH_XML";
                     
+                    }
 
-                    this.current_accidentals[note.voice][note.pitch.octave][snew_step] = new_accidental;
+                    if (note.stem )
+                    {
+                        last_stem = this.get_last_stem(note.staff, note.voice);
+                        // if in eighth or smaller group - keep same stem
+                        //console.log("STEM: staff: %s voice: %s last_direction: %s last duration: %s pitch.step: %s %s octave: %s",
+                        //    note.staff, note.voice, last_stem.last_direction, last_stem.last_duration, 
+                        //    this.step_number[note.pitch.step], note.pitch.step, note.pitch.octave);
+
+                        // get clef information
+                        if (clef_data[note.staff])
+                        {
+                            clef = clef_data[note.staff];
+                        }
+                        else
+                        {
+                            clef = clef_data[0];    // MuseScore does not store clefs by staff number
+                        }
+                        //console.log("CLEF: middle: %s %s octave: %s NOTE: voice: %s step: %s octave: %s", 
+                        //    clef.middle_number, clef.middle_letter, clef.middle_octave,
+                        //    note.voice, note.pitch.step, note.pitch.octave);
+                        
+                        if (measure_data.min_voice && measure_data.min_voice < measure_data.max_voice)
+                        {
+                            if (note.voice >  measure_data.min_voice)
+                            {
+                                // this is only for staffs with multiple voices - which we need to locate
+                                note.stem = "down";    // other voices tend to go down
+                                //console.log("VOICE: %s STEM DOWN");
+                            }
+                            else
+                            { 
+                                note.stem = "up";    // other voices tend to go down
+                                //console.log("VOICE: %s STEM UP");
+                            }
+                        }
+                        else if (note.duration < divisions && last_stem.last_duration > 0 && last_stem.last_duration < divisions)
+                        {
+                            if (show_output)
+                                console.log("BEAM GROUP - USE LAST STEM last_direction: %s", last_stem.last_direction);
+                            note.stem = last_stem.last_direction;
+                        }
+                        else if (note.pitch.octave > clef.middle_octave)
+                        {
+                            //console.log("octave: %s > %s - down", note.pitch.octave, clef.middle_octave);
+                            note.stem = "down";
+                        }
+                        else if (note.pitch.octave < clef.middle_octave)
+                        {
+                            //console.log("octave: %s < %s - UP", note.pitch.octave, clef.middle_octave);
+                            note.stem = "up";
+                        }
+                        else if (this.step_number[note.pitch.step] == clef.middle_number)
+                        {
+                            //console.log("Middle line - DOWN");
+                            note.stem = "down"; // octave 3 - B
+                        }
+                        else if (this.step_number[note.pitch.step] > clef.middle_number)
+                        {
+                            //console.log("ABOVE Middle line - DOWN");
+                            note.stem = "down"; // octave 3 - B
+                        }
+                        else
+                        {
+                            //console.log("BELOW Middle line - UP");
+                            note.stem = "up";
+                        }
 
 
-                    pitch_xml += `  <octave>` + transposed_note.octave + `</octave>\n`;
-                    pitch_xml += ` </pitch>\n`;
+
                     if (show_output)
-                        console.log("PITCH_XML: %s", pitch_xml);
+                            console.log("note.duration: %s last_stem.last_duration: %s last_stem.last_direction: %s\n    note.pitch.octave: %s note.pitch.step: %s new note.stem: %s",
+                                note.duration, last_stem.last_duration, last_stem.last_direction, 
+                                note.pitch.octave, note.pitch.step, note.stem );
+
             
-                    note_xml += pitch_xml;
+                        last_stem.last_direction = note.stem;
+                        last_stem.last_duration = note.duration;
+                        
+                        //throw("STEM");
                 }
 
                 /***
-                  <note default-x="105.68" default-y="-255.00">
-                    <chord/>
+                        <note default-x="210">
                     <pitch>
-                    <step>F</step>
-                    <octave>2</octave>
+                            <step>A</step>
+                            <octave>5</octave>
                     </pitch>
-                    <duration>4</duration>
-                    <voice>5</voice>
-                    <type>quarter</type>
-                    <stem>up</stem>
-                    <staff>2</staff>
+                        <duration>2</duration>
+                        <voice>1</voice>
+                        <type>16th</type>
+                        <accidental>natural</accidental>
+                        <stem default-y="-22">down</stem>
+                        <staff>1</staff>
+                        <beam number="1">end</beam>
+                        <beam number="2">end</beam>
                     </note>
                  */
 
@@ -522,7 +904,9 @@
                     note_xml += ` <duration>` + note.duration + `</duration>\n`;
                 if (note.tie)
                     note_xml += note.tie;   // exactly as found
-                if (note.voice !== null)
+                    if (note.instrument !== null)
+                        note_xml += note.instrument;   // exactly as found
+                    if (note.voice !== 0)
                     note_xml += ` <voice>` + note.voice + `</voice>\n`;
                 if (note.type)
                     note_xml += ` <type>` + note.type + `</type>\n`;
@@ -536,27 +920,41 @@
                 }
                 if (note.stem)
                     note_xml += ` <stem>` + note.stem + `</stem>\n`;
-                if (note.staff !== null)
+
+                    
+
+                    if (note.staff !== 0)
                     note_xml += ` <staff>` + note.staff + `</staff>\n`;
 
                 if (additional_note_items)
                 {
-                    //console.log("additional_note_items: %s", additional_note_items);
                     note_xml += additional_note_items;
                 }
-                note_xml += `</note>\n`;
+
+                    if (note.notations)
+                    {
+                        note_xml += note.notations;
+                    }
+                    
+                    if (note.lyric)
+                    {
+                        note_xml += note.lyric;
+                    }
+                    
+                    note_xml += `</note>`;
 
                 //console.log("note_xml: %s", note_xml);
+                    //throw("NOTE STEM");
 
+                    this.add_to_output(note_xml);
+                    note_xml = "NOTE_XML";
+                    in_type.note = false;
 
-                str_out += note_xml;
-                in_note = false;
-                continue;
-
+                    continue;   // skip default output
 
             }
 
-            if (in_note)
+                if (in_type.note)
             {
                 if (sline.indexOf("<duration>") >= 0)
                 {
@@ -568,19 +966,65 @@
                 if (sline.indexOf("<grace") >= 0)
                 {
                     note.grace = sline + "\n";   // save entire line
-                    console.log("note.grace: %s", note.grace);
+                        //console.log("note.grace: %s", note.grace);
+                        continue;   // output later
+
+                    }
+
+                    if (sline.indexOf("<notations") >= 0)
+                    {
+                        note.notations = sline + "\n";   // save entire line
+                        //console.log("note.notations: %s", note.notations);
+                        in_type.notations = true;
+                        continue;   // output later
+
+                    }
+
+                    if (in_type.notations)
+                    {
+                        note.notations += sline + "\n";
+                        if (sline.indexOf("</notations") >= 0)
+                            in_type.notations = false;
+                        continue;   // output later
+                    }
+
+                    if (sline.indexOf("<lyric") >= 0)
+                    {
+                        note.lyric = sline + "\n";   // save entire line
+                        //console.log("note.lyric: %s", note.lyric);
+                        in_type.lyric = true;
+                        continue;   // output later
+
+                    }
+
+                    if (in_type.lyric)
+                    {
+                        note.lyric += sline + "\n";
+                        if (sline.indexOf("</lyric") >= 0)
+                            in_type.lyric = false;
                     continue;   // output later
                 }
 
                 if (sline.indexOf("<tied") >= 0)
                 {
-                    // pass through
+                        note.tied = sline + "\n";   // save entire line
+                        //console.log("note.tied: %s", note.tied);
+                        continue;   // output later
                 }
-                else if (sline.indexOf("<tie") >= 0)
+                    
+                    if (sline.indexOf("<tie") >= 0)
                 {
                     note.tie = sline + "\n";   // save entire line
-                    console.log("note.tie: %s", note.tie);
+                        //console.log("note.tie: %s", note.tie);
                     continue;   // output later
+
+                    }
+                    if (sline.indexOf("<instrument") >= 0)
+                    {       
+                        note.instrument = sline + "\n"; // copy to output
+                        //console.log("note.instrument: %s", note.instrument);
+                        continue;   // output later
+
                 }
                 if (sline.indexOf("<voice>") >= 0)
                 {
@@ -611,7 +1055,8 @@
                 // </rest>
                 // or
                 // <rest/>
-                if (sline.indexOf("<rest/>") >= 0)
+                    // <rest />  (Sibleius addes a space)
+                    if (sline.indexOf("<rest/>") >= 0|| sline.indexOf("<rest />") >= 0)
                 {
                     note.rest = sline.trim() + "\n";
                     //console.log("note.rest: %s", note.rest);
@@ -620,23 +1065,25 @@
                 if (sline.indexOf("<rest>") >= 0)
                 {
                     note.rest = sline.trim() + "\n";
-                    in_rest = true;
+                        in_type.rest = true;
                     //console.log("note.rest: %s", note.rest);
                     continue;   // output later
                 }
-                if (in_rest)
+                    if (in_type.rest)
                 {
                     note.rest += sline.trim() + "\n";
                     if (sline.indexOf("</rest>") >= 0)
-                        in_rest = false;
-                    continue;
+                            in_type.rest = false;
+                        continue;   // output later
+
                 }
                 if (sline.indexOf("<chord") >= 0)
                 {
                     note.chord = true;
                     //console.log("note.chord: %s", note.chord);
                     continue;   // output later
-                }
+
+                        
             }
 
             // <pitch>
@@ -646,7 +1093,7 @@
             //     </pitch>
             if (sline.indexOf("<pitch") >= 0)
             {
-                in_pitch = true;
+                        in_type.pitch = true;
 
                 note.pitch = {alter: 0, step: 0, octave: 0};
                 new_accidental = "";
@@ -657,82 +1104,56 @@
                 transposed_note = this.transpose(note.pitch.step, note.pitch.alter, note.pitch.octave);
 
                 
-                in_pitch = false;
+                        in_type.pitch = false;
                 continue;   // output later
             }
                 
             
-            if (in_pitch)
+                    if (in_type.pitch)
             {
                 if (sline.indexOf("<step") >= 0)
                 {
                     note.pitch.step = this.get_xml_value(sline);
-                    continue;
+
                 }
                 if (sline.indexOf("<alter") >= 0)
                 {
                     note.pitch.alter = this.get_xml_number(sline);
-                    continue;
+
                 }
                 if (sline.indexOf("<octave") >= 0)
                 {
                     note.pitch.octave = this.get_xml_number(sline);
-                    continue;
+
                 }
+                        continue;   // output later
             }
 
             // <accidental>sharp</accidental>
             // ADH - do we ever force 'natural'?
             // YES: We need to check against last accidental in this measure,
-            // and the accidentals in this key
+                    // and the accidentals in this key */
+                
             if (sline.indexOf("<accidental>") >= 0)
             {
-                // we will calculate accidentals ourselves after transpose
-                continue;   // output later
-                
+                        continue;   // we will output our own accidentals
             }
 
             // <stem>down</stem>
-            if (sline.indexOf("<stem>") >= 0)
+                    // <stem default-y="-22">down</stem>
+                    if (sline.indexOf("<stem") >= 0)
             {
-                // if in eighth or smaller group - keep same stem
-                if (note.voice > 1)
-                    note.stem = "down";    // other voices tend to go down
-                else if (note.duration < divisions && last_note_duration > 0 && last_note_duration < divisions)
-                {
-                    if (show_output)
-                        console.log("USE LAST STEM DIRECTION: %s", last_stem_direction);
-                    note.stem = last_stem_direction;
+                        note.stem = this.get_xml_value(sline);
+                        continue;   // output later
                 }
-                else if (note.pitch.octave > 4)
-                    note.stem = "down";
-                else if (note.pitch.octave < 4)
-                    note.stem = "up";
-                else if (note.pitch.step == "B")
-                    note.stem = "down"; // octave 3 - B
-                else
-                    note.stem = "up";
-
                 
 
-                if (show_output)
-                        console.log("note.duration: %s last_note_duration: %s last_stem_direction: %s note.pitch.octave: %s note.pitch.step: %s new note.stem: %s",
-                            note.duration, last_note_duration, last_stem_direction, note.pitch.octave, note.pitch.step, note.stem );
 
-
-                last_stem_direction = note.stem;
-                last_note_duration = note.duration;
-            
-                continue;
-            }
-
-        
-            if (in_note)
-            {
                 // items we do not process - but just add to <note>
-                //console.log("IN NOTE pass through: %s", sline);  
                 additional_note_items += " " + sline.trim() + "\n";
-                continue;
+                    continue; // skip after additional
+
+f
             }
             
             // transpose root
@@ -744,10 +1165,10 @@
             if (sline.indexOf("<root>") >= 0)
             {
                 //console.log("START %s", sline);
-                in_root = true;
+                    in_type.root = true;
                 root_alter = "";
                 root_step = "";
-                continue;
+
             }
                 
             
@@ -764,14 +1185,15 @@
                 root_xml += `     <root-alter>` + transposed_note.alter + `</root-alter>\n`;
 
                 
-                root_xml += `</root>\n`;
+                    root_xml += `</root>`;
                 //console.log("root_XML: %s", root_xml);
-                str_out += root_xml;
-                in_root = false;
-                continue;
+                    this.add_to_output(root_xml);
+                    root_xml = "ROOT_XML";
+                    in_type.root = false;
+
             }
                 
-            if (in_root)
+                if (in_type.root)
             {
                 if (show_output)
                     console.log("IN ROOT: %s", sline);
@@ -780,14 +1202,14 @@
                     root_step = this.get_xml_value(sline);
                     if (show_output)
                         console.log("ROOT_STEP; %s", root_step);
-                    continue;
+
                 }
                 else if (sline.indexOf("<root-alter") >= 0)
                 {
                     root_alter = this.get_xml_number(sline);
                     if (show_output)
                         console.log("root_alter; %s", root_alter);
-                    continue;
+
                 }
                 else
                     throw("Unknown ROOT line: " + sline);
@@ -805,10 +1227,10 @@
             {
                 if (show_output)
                     console.log("START BASS %s", sline);
-                in_bass = true;
+                    in_type.bass = true;
                 bass_alter = "";
                 bass_step = "";
-                continue;
+
             }
                 
             
@@ -826,15 +1248,16 @@
                 bass_xml += ` <bass-alter>` + transposed_note.alter + `</bass-alter>\n`;
 
                 
-                bass_xml += `</bass>\n`;
+                    bass_xml += `</bass>`;
                 if (show_output)
                     console.log("bass_XML: %s", bass_xml);
-                str_out += bass_xml;
-                in_bass = false;
-                continue;
+                    this.add_to_output(bass_xml);
+                    bass_xml = "BASS_XML";
+                    in_type.bass = false;
+
             }
                 
-            if (in_bass)
+                if (in_type.bass)
             {
                 if (show_output)
                     console.log("IN bass: %s", sline);
@@ -843,30 +1266,37 @@
                     bass_step = this.get_xml_value(sline);
                     if (show_output)
                         console.log("bass_STEP; %s", bass_step);
-                    continue;
+
                         }
                 else if (sline.indexOf("<bass-alter") >= 0)
                 {
                     bass_alter = this.get_xml_number(sline);
                     if (show_output)
                         console.log("bass_alter; %s", bass_alter);
-                    continue;
+
                 }
                 else
                     throw("Unknown bass line: " + sline);
             }
 
+                //if (sline.indexOf("<text>") >= 0)
+                //    console.log("%s SLINE: %s", iline, sline);  // for debugging - show lyric
             
+                if (this.pass == 2)
+                {
+                    //console.log("ADD DEFAULT TO OUTPUT: %s", sline);
+                    this.add_to_output(sline); // copy to output
+                }
             
 
-            str_out += sline + "\n";
 
+            }
+        } // end of pass loop
         
             
-        }
 
-        xml_string_out = str_out;
-        console.log("NEW xml_string_out length: %s", xml_string_out.length);
+        xml_string_out = this.str_out;
+        //console.log("NEW xml_string_out length: %s", xml_string_out.length);
 
 
 
@@ -874,21 +1304,20 @@
     }
 
     
-
-    osmd_transpose.set_default_accidentals = function()
+    osmd_transpose.add_to_output = function(str)
     {
-        // wee need to track accidentals by both voice and octave
-        current_accidentals = [];
-        for (var voice = 0; voice < 5; voice++)
-        {
-            current_accidentals[voice] = [];
-            for (var octave = 0; octave < 10; octave++)
-            {
-                current_accidentals[voice][octave] = JSON.parse(JSON.stringify(this.accidentals_in_key[this.new_key]));
-            }
-        }
+        //console.log("PASS: %s STR: %s", this.pass, str);
+        if (this.pass == 1)
+            return;
+        
+        this.str_out += str + "\n";
+        console.log("add_to_output PASS: %s LEN: %s STR: %s", this.pass, this.str_out.length, str);
+        console.log("STR_OUT: %s", this.str_out.substr(0, 100));
+
     }
 
+
+    // after you get this, and changes will automatically be stored in array
     osmd_transpose.get_current_accidental = function(voice, octave, note)
     {
         // we need to track accidentals by both voice and octave
@@ -905,6 +1334,21 @@
         // see if we need "this.""
        // console.log("note: %s current_accidental: %s", note, this.current_accidentals[voice][octave][note]);
         return (this.current_accidentals[voice][octave][note]);
+    }
+
+    // after you get this, and changes will automatically be stored in array
+    osmd_transpose.get_last_stem = function(staff, voice)
+    {
+        // we need to track accidentals by both voice and octave
+        if (!this.last_stem[staff])
+        {
+            this.last_stem[staff] = [];
+        }
+        if (!this.last_stem[staff][voice])
+        {
+            this.last_stem[staff][voice] = {last_direction: null, last_duration: null};
+        }
+        return(this.last_stem[staff][voice]);
     }
 
 

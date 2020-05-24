@@ -918,12 +918,12 @@
                             if (note_offset > 0)
                             {
                                 note_position = "above";
-                                stem_direction = "up";        
+                                stem_direction = "down";        
                         }
                             else if (note_offset < 0)
                         {
                                 note_position = "below";
-                                stem_direction = "down";
+                                stem_direction = "up";
                         }
                         else
                         {

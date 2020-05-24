@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8" />
+    <title>DomParser Demo</title>
+</head>
+
+<body>
+    <h1>Open Console and play around :)</h1>
+    <script type="text/javascript">
+        const rawXml = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+                        <!DOCTYPE score-partwise PUBLIC "-//Recordare//DTD MusicXML 3.1 Partwise//EN" "http://www.musicxml.org/dtds/partwise.dtd">
+                        <note default-x="294.17" default-y="-30.00">
+                            <chord/>
+                            <pitch>
+                            <step>B</step>
+                            <alter>-1</alter>
+                            <octave>2</octave>
+                            </pitch>
+                            <duration>1</duration>
+                            <voice>1</voice>
+                            <type>eighth</type>
+                            <stem>up</stem>
+                        </note>`
+
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(rawXml, 'application/xml');
+
+        const stack = [xmlDoc.firstElementChild];
+        let target;
+        while (target = stack.pop()) {
+            // Always traversing sibling tags 
+            if (target.nextElementSibling) {
+                stack.push(target.nextElementSibling);
+            }
+
+            switch (target.tagName.toUpperCase()) {
+                case 'NOTE':
+                    // query child
+                    const durationElem = target.querySelector('duration');
+                    const duration = +durationElem.innerHTML;
+
+                    const restElem = target.querySelector('rest');
+                    if (restElem) {
+                        const stepElem = restElem.querySelector('display-step');
+                        const octaveElem = restElem.querySelector('display-octave');
+                        const transposedRest = this.transposePitch(stepElem.innerHTML, 0, +octaveElem.innerHTML);
+                        stepElem.innerHTML = transposedRest.step;
+                        octaveElem.innerHTML = `${transposedRest.octave}`;
+                    }
+
+                    const pitchElem = target.querySelector('pitch');
+                    if (pitchElem) {
+                        let stepElem = pitchElem.querySelector('step');
+                        let octaveElem = pitchElem.querySelector('octave');
+                        let alterElem = pitchElem.querySelector('alter');
+                        let accidentalElem = target.querySelector('accidental');
+
+                        // fake stuff for demo purpose
+                        const transposedNote = {octave: 3, step: 'C', alter: 1, accidental: 'flat'}
+                        octaveElem.innerHTML = transposedNote.octave;
+                        stepElem.innerHTML = transposedNote.step;
+                        alterElem && (alterElem.innerHTML = transposedNote.alter);
+                        if (!accidentalElem) {
+                            accidentalElem = document.createElementNS('', 'accidental');
+                            pitchElem.appendChild(accidentalElem);
+                        } 
+                        accidentalElem.innerHTML = transposedNote.accidental
+                    }
+
+                    continue;
+            }
+
+            // Always traversing sibling tags 
+            if (target.firstElementChild) {
+                stack.push(target.firstElementChild);
+            }
+        }
+
+        console.log(rawXml)
+        console.log(xmlDoc.firstElementChild.outerHTML)
+
+    </script>
+
+</body>
+
+</html>

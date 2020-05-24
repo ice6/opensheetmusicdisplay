@@ -279,7 +279,19 @@
     osmd_transpose.old_key;
     osmd_transpose.new_key;
 
+    // all measures
     osmd_transpose.measure_data_array = [];
+    var measure_data_array = osmd_transpose.measure_data_array; // for debugging
+
+    // all notes
+    osmd_transpose.note_array = [];
+    var note_array = osmd_transpose.note_array; // for debugging
+
+    // all chords
+    osmd_transpose.chord_array = [];
+    var chord_array = osmd_transpose.chord_array; // for debugging
+
+
 
     osmd_transpose.transpose = function(old_step, old_alter, old_octave) 
     {
@@ -366,7 +378,7 @@
         return (transposed_note);
     }
 
-    //osmd_transpose.transpose("Bb",2,3);
+
 
     // parameters used:
     // transpose_key e.g. "Bb"
@@ -376,6 +388,11 @@
 
     osmd_transpose.str_out = "";
     osmd_transpose.pass = 0;
+
+    var attributes = {divisions: 0, 
+        time: {beats: 0, beat_type: 0}, 
+        key: {fifths: 0, mode: null},
+        staves: null, clef: []};
 
 
 
@@ -391,9 +408,10 @@
 
         show_output = this.parameters.show_output;
 
-        // move to local variables for easier access
+        // move some namespace variables to local variables for easier access
         let old_key = this.old_key;
         let new_key = this.new_key;
+        let measure_data_array = this.measure_data_array;
 
         let str_in = xml_string.split("\n");
         if (show_output)
@@ -410,6 +428,8 @@
             // save data for elements
         
         
+            let note_array_index = 0;
+            let chord_array_index = 0; // 1 will be used first
 
 
 
@@ -422,21 +442,18 @@
 
             
             let clef_number = null;
-            let note = {};
+
             let clef = {};
-            let clef_data = []; // for stem direction
         
         
 
+            this.current_accidentals = []; // accidental for octave and note
+
+            let measure_number = 0; // measure count 
 
 
 
-            this.last_stem = [];    // store for octave and voice
-        this.current_accidentals = []; // accidental for octave and note
-
-            let measure_number = 0; // measure count
             
-            let divisions = 0;
             let show_debugs = false;    // to display output for only certain measures
             let measure_data = {};
         
@@ -446,11 +463,14 @@
 
             if (this.pass == 1)
             {
-                this.measure_data_array = [];
+                // we store read ahead data in pass 1
+                measure_data_array.length = 0;  // reset
+     
             }
             else if (this.pass == 2)
             {
-                //console.log("MEASURE_DATA_ARRAY[1]: %s", this.measure_data_array[1].measure_number);
+                
+                
             }
             measure_data = {};  // no measure yet
             measure_number = 0; // measure count
@@ -463,13 +483,50 @@
                 //if (this.pass == 2)
                 //    console.log("%s sline: %s", iline, sline);
 
+                if (sline.indexOf("<attributes") >= 0)
+                {
+                    in_type.attributes = true;
+                    // fall through
+                }
+                if (sline.indexOf("/attributes") >= 0)
+                {
+                    in_type.attributes = false;
+                    // fall through to write sline
+                }
+
+                if (in_type.attributes)
+                {
             //  divisions element indicates how many divisions per quarter note are used to indicate a note's duration
             //  <divisions>256</divisions>
             if (sline.indexOf("<divisions>") >= 0)
             {
-                divisions = this.get_xml_number(sline);
+                        attributes.divisions = this.get_xml_number(sline);
+                        if (show_output)
+                            console.log("attributes.divisions: %s SLINE: %s", attributes.divisions, sline);
+                    }
+                    // <time>
+                    //  <beats>4</beats>
+                    //  <beat-type>4</beat-type>
+                    // </time>
+                    if (sline.indexOf("<beats>") >= 0)
+                    {
+                        attributes.time.beats = this.get_xml_number(sline);
+                        if (show_output)
+                            console.log("attributes.time.beats: %s SLINE: %s", attributes.time.beats, sline);
+                    }
+                    if (sline.indexOf("<beat-type>") >= 0)
+                    {
+                        attributes.time.beat_type = this.get_xml_number(sline);
                 if (show_output)
-                        console.log("divisions: %s SLINE: %s", divisions, sline);
+                            console.log("attributes.time.beat_type: %s SLINE: %s", attributes.time.beat_type, sline);
+                    }
+                    if (sline.indexOf("<staves>") >= 0)
+                    {
+                        attributes.staves = this.get_xml_number(sline);
+                        if (show_output)
+                            console.log("attributes.staves: %s SLINE: %s", attributes.staves, sline);
+                    }
+                    // fall through to write sline
                 }
 
                 if (sline.indexOf("<clef-octave-change>") >= 0)
@@ -548,47 +605,9 @@
                         //console.log("</CLEF: %s SIGN: %s LINE: %s middle: %s %s octave: %s",
                          //s   clef.number, clef.sign, clef.line, clef.middle_number, clef.middle_letter, clef.middle_octave)
                     }
-                    // remove all these when working
-                    else
-                    {
-                        if (clef.sign == "G")
-                        {
-                            //clef.middle_number = "B";
-                            // 2 --> 6   3 --> 
-                            clef.middle_number = (6 + 4 - clef.line * 2) % 7;    // G2 is standard
-                            //console.log("CLEF SIGN: %s LINE: %s middle_number: %s", clef.sign, clef.line, clef.middle_number);
-                            clef.middle_letter = this.note_from_step[clef.middle_number];
-                            clef.middle_octave = 3;
-                            if (clef.line < 2)
-                                clef.middle_octave++;
-                        }
-                        else if (clef.sign == "F")
-                        {
-                            // F4 --> D, F5 --> A
-                            //clef.middle_number = "D";
-                            clef.middle_number = (1 + 8 -  - clef.line * 2) % 7;    // F4 is standard
-                            clef.middle_letter = this.note_from_step[clef.middle_number];
-                            clef.middle_octave = 2;
-                            if (clef.line > 4)
-                                clef.middle_octave--;
-                        }
-                        else if (clef.sign == "C")
-                        {
-                            // F4 --> D, F5 --> A
-                            //clef.middle_number = "D";
-                            clef.middle_number = (1 + 8 -  - clef.line * 2) % 7;    // F4 is standard
-                            clef.middle_letter = this.note_from_step[clef.middle_number];
-                            clef.middle_octave = 2;
-                            if (clef.line > 4)
-                                clef.middle_octave--;
-                        }
-                        else
-                        {
-                            console.log("Unknown clef sign: %s", sline);
-                        }
-                    }
                 
-                    clef_data[clef_number] = clef;
+                
+                    attributes.clef[clef_number] = clef;
                     
                     
                     // fall through to output
@@ -625,21 +644,18 @@
 
                     if (this.pass == 1)
                     {
-                        this.measure_data_array[measure_number] = {measure_number: measure_number,
-                            min_voice: null, max_voice: null};
+                        
+                        measure_data_array[measure_number] = {measure_number: measure_number,
+                            beam_data_array: [], staff_data_array: []};
                         //console.log("measure_data_array SET this.pass 1: measure_number: %s measure_data_array set: %s", 
-                        //   measure_number, this.measure_data_array[measure_number].measure_number);
+                        //   measure_number, measure_data_array[measure_number].measure_number);
                     }
-                    measure_data = this.measure_data_array[measure_number];
+                    measure_data = measure_data_array[measure_number];
+                    measure_data.beam_index = 0; // position of beam_data in array
 
-                    //if (measure_number < 15)
-                //    show_debugs = true;
-                    //if (measure_number > 16)
-                //    show_debugs = false;
-                    this.last_stem = [];    // restart stem information
 
   	
-	            this.current_accidentals = [];
+                    this.current_accidentals.length = 0;
 
             }
 
@@ -651,14 +667,14 @@
             // <fifths>-4</fifths>
             if (sline.indexOf("</fifths") >= 0)
             {
-                    let fifths = this.get_xml_number(sline);
+                    attributes.key.fifths = this.get_xml_number(sline);
                 if (show_output)
-                    console.log("SLINE: %s fifths: %s", sline, fifths);
+                        console.log("SLINE: %s attributes.key.fifths: %s", sline, attributes.key.fifths);
                     let line_of_fifths_c = this.line_of_fifths_numbers["C"];
-                    let old_key_number = fifths + line_of_fifths_c;
+                    let old_key_number = attributes.key.fifths + line_of_fifths_c;
                 this.old_key = this.line_of_fifths[old_key_number];
                 if (show_output)
-                    console.log("fifths: %s old_key_number: %s old_key: %s", fifths, old_key_number, this.old_key);
+                        console.log("attributes.key.fifths: %s old_key_number: %s old_key: %s", attributes.key.fifths, old_key_number, this.old_key);
 
                 this.new_key = parameters.transpose_key;
                     let new_line_of_fifths_number = this.line_of_fifths_numbers[this.new_key] - line_of_fifths_c;
@@ -667,7 +683,7 @@
                         
                     this.add_to_output(`<fifths>` + new_line_of_fifths_number + `</fifths>`);
                 
-                this.current_accidentals = [];
+                    this.current_accidentals.length = 0;
 
                 // musescore puts mode on the same line as fifths
                     let ipos = sline.indexOf("</fifths");
@@ -695,12 +711,27 @@
 
                     // preset voice and staff in case they are not set
                     // staff 0 and voice 0 do not get written out
-                    note = {rest: null, chord: null, pitch: null, duration: null, 
+                    note_index = note_array_index++;
+                    if (this.pass == 1)
+                    {
+                        note = {index: note_index, rest: null, chord: null,  chord_index: null, first_chord_note: false,
+                            pitch: null, duration: null, 
                         instrument: null, voice: 0, type: null, dot: null, accidental: null, stem: null, staff: 0,
-                        notations: null, lyric: null };
+                            notations: null, lyric: null, beam_status_array: [] };
+
+                        this.note_array[note_index] = note;
+                    }
+                    else
+                    {
+                        note = note_array[note_index];  // reuse entry from pass 1
+                        //console.log("NOTE: %s first_chord_note: %s", note.index, note.first_chord_note);
+                    }
 
                 note_start = sline.trim(); // to put out later
                 additional_note_items = "";
+
+                    // lets get the beat of the note in the measure
+                    // need to track durations by voice and staff
 
                     continue; // output after </note
 
@@ -708,18 +739,19 @@
             } 
             if (sline.indexOf("</note") >= 0)
             {
+                    staff_data = this.get_staff_data(measure_data, note.staff);
                     if (this.pass == 1)
                     {
                         if (note.voice > 0)
                         {
-                            if (!measure_data.min_voice)
-                                measure_data.min_voice = note.voice;
+                            if (!staff_data.min_voice)
+                                staff_data.min_voice = note.voice;
                             else 
-                                measure_data.min_voice = Math.min(measure_data.min_voice, note.voice);
-                            if (!measure_data.max_voice)
-                                measure_data.max_voice = note.voice;
+                                staff_data.min_voice = Math.min(staff_data.min_voice, note.voice);
+                            if (!staff_data.max_voice)
+                                staff_data.max_voice = note.voice;
                             else 
-                                measure_data.max_voice = Math.max(measure_data.max_voice, note.voice);
+                                staff_data.max_voice = Math.max(staff_data.max_voice, note.voice);
                         }
                         //console.log("SKIP IN PASS 1");
 
@@ -804,81 +836,153 @@
 
                     if (note.stem )
                     {
-                        last_stem = this.get_last_stem(note.staff, note.voice);
-                        // if in eighth or smaller group - keep same stem
-                        //console.log("STEM: staff: %s voice: %s last_direction: %s last duration: %s pitch.step: %s %s octave: %s",
-                        //    note.staff, note.voice, last_stem.last_direction, last_stem.last_duration, 
-                        //    this.step_number[note.pitch.step], note.pitch.step, note.pitch.octave);
+                        voice_data = this.get_voice_data(measure_data, note.staff, note.voice);
+
 
                         // get clef information
-                        if (clef_data[note.staff])
+                        if (attributes.clef[note.staff])
                         {
-                            clef = clef_data[note.staff];
+                            clef = attributes.clef[note.staff];
                         }
                         else
                         {
-                            clef = clef_data[0];    // MuseScore does not store clefs by staff number
+                            clef = attributes.clef[0];    // MuseScore does not store clefs by staff number
                         }
                         //console.log("CLEF: middle: %s %s octave: %s NOTE: voice: %s step: %s octave: %s", 
                         //    clef.middle_number, clef.middle_letter, clef.middle_octave,
                         //    note.voice, note.pitch.step, note.pitch.octave);
                         
-                        if (measure_data.min_voice && measure_data.min_voice < measure_data.max_voice)
+                        //console.log("staff_data: %s min_voice: %s max_voice: %s", staff_data.staff, staff_data.min_voice, staff_data.max_voice);
+                        //console.log("NOTE: index: %s chord_index: %s first_chord_note: %s step: %s octave: %s", 
+                        //    note.index, note.chord_index, note.first_chord_note, note.pitch.step, note.pitch.octave);
+                        
+                        
+                        if (staff_data.min_voice && staff_data.min_voice < staff_data.max_voice)
                         {
-                            if (note.voice >  measure_data.min_voice)
+                            if (note.voice >  staff_data.min_voice)
                             {
                                 // this is only for staffs with multiple voices - which we need to locate
-                                note.stem = "down";    // other voices tend to go down
-                                //console.log("VOICE: %s STEM DOWN");
+                                stem_direction = "down";    // other voices tend to go down
+                                //console.log("USE VOICE: %s STEM DOWN", note.voice);
                             }
                             else
                             { 
-                                note.stem = "up";    // other voices tend to go down
-                                //console.log("VOICE: %s STEM UP");
+                                stem_direction = "up";    // other voices tend to go down
+                                //console.log("USE VOICE: %s STEM UP", note.voice);
                             }
                         }
-                        else if (note.duration < divisions && last_stem.last_duration > 0 && last_stem.last_duration < divisions)
+                        else if (note.chord_index !== null)
                         {
-                            if (show_output)
-                                console.log("BEAM GROUP - USE LAST STEM last_direction: %s", last_stem.last_direction);
-                            note.stem = last_stem.last_direction;
+                            // get highest and lowest position of notes in chord
+                            //console.log("NOTE: %s chord_array[note.chord_index = %s]  first_chord_note: %s", 
+                            //    note.index, note.chord_index, note.first_chord_note);
+                            let chord_data = this.chord_array[note.chord_index];
+                            
+                            if (this.pass == 1)
+                            {
+                                // we need to set for first note in chord in pass 2.
+                                this.set_chord_range(note);
+                            }
+
+                            if (this.pass == 2)
+                            {
+                                if (note.first_chord_note)
+                        {
+                                    this.set_chord_range(note);
                         }
-                        else if (note.pitch.octave > clef.middle_octave)
+
+                                if (Math.abs(chord_data.max_offset) > Math.abs(chord_data.min_offset))
                         {
-                            //console.log("octave: %s > %s - down", note.pitch.octave, clef.middle_octave);
-                            note.stem = "down";
+                                    stem_direction = "down"; 
                         }
-                        else if (note.pitch.octave < clef.middle_octave)
+                                else
                         {
-                            //console.log("octave: %s < %s - UP", note.pitch.octave, clef.middle_octave);
-                            note.stem = "up";
+                                    // we could handle "equal" differently
+                                    stem_direction = "up"; 
                         }
-                        else if (this.step_number[note.pitch.step] == clef.middle_number)
-                        {
-                            //console.log("Middle line - DOWN");
-                            note.stem = "down"; // octave 3 - B
-                        }
-                        else if (this.step_number[note.pitch.step] > clef.middle_number)
-                        {
-                            //console.log("ABOVE Middle line - DOWN");
-                            note.stem = "down"; // octave 3 - B
+                                //console.log("PASS 2: CHORD index: %s max: %s min: %s stem_direction: %s", 
+                                //    note.chord_index, chord_data.max_offset, chord_data.min_offset, stem_direction);
+                            }
+                            
                         }
                         else
                         {
-                            //console.log("BELOW Middle line - UP");
-                            note.stem = "up";
+                            // are we above or below the center staff line
+
+                            note_offset = this.get_note_offset(note);
+                       
+                            if (note_offset > 0)
+                            {
+                                note_position = "above";
+                                stem_direction = "up";        
+                        }
+                            else if (note_offset < 0)
+                        {
+                                note_position = "below";
+                                stem_direction = "down";
+                        }
+                        else
+                        {
+                                //console.log("Middle line - last or down");
+                                note_position = "middle";
+                                if (voice_data.last_direction)
+                                    stem_direction = voice_data.last_direction;
+                                else
+                                    stem_direction = "down"; 
+                                //console.log("ON MIDDLE LINE: %s", stem_direction);   
+                            }
                         }
 
+                        // lets only combine notes in first beam for now
+                        if (note.beam_status_array[1])
+                        {
+                            beam_status = note.beam_status_array[1];
+                            if (beam_status == "begin")
+                            {
+                                measure_data.beam_index++;
+                                if (this.pass == 1)
+                                {
+                                    measure_data.beam_data_array[measure_data.beam_index] = {notes: 0, above_count: 0, below_count: 0};
+                                    //console.log("START beam_data_array[%s]", measure_data.beam_index);
+                                }
+                            }
+                            beam_data = measure_data.beam_data_array[measure_data.beam_index];
+                            if (this.pass == 1)
+                            {
+                                beam_data.notes++;
+                                if (note_position == "above")
+                                    beam_data.above_count++;
+                                else
+                                    beam_data.below_count++;
+                                //console.log("COUNT BEAM above: %s below: %s", 
+                                //    beam_data.above_count, beam_data.below_count);
 
 
-                    if (show_output)
-                            console.log("note.duration: %s last_stem.last_duration: %s last_stem.last_direction: %s\n    note.pitch.octave: %s note.pitch.step: %s new note.stem: %s",
-                                note.duration, last_stem.last_duration, last_stem.last_direction, 
-                                note.pitch.octave, note.pitch.step, note.stem );
+                            }
+                            else 
+                            {
+                                // pass == 2
+                                if (beam_data.above_count > beam_data.below_count)
+                                {
+                                    stem_direction = "down"; 
+                                }
+                                else
+                                {
+                                    stem_direction = "up"; 
+                                }
+                                //console.log("USE BEAM above: %s below: %s stem_direction: %s", 
+                                //    beam_data.above_count, beam_data.below_count, stem_direction);
+                            }
+                        }
+
+                        if (this.pass == 2)
+                        {
+                            //console.log("USE STEM_DIRECTION: %s", stem_direction);
+                            note.stem = stem_direction;    
+                        }
+                        voice_data.last_direction = note.stem;
 
             
-                        last_stem.last_direction = note.stem;
-                        last_stem.last_duration = note.duration;
                         
                         //throw("STEM");
                 }
@@ -1048,6 +1152,16 @@
                     note.staff = this.get_xml_number(sline);
                     //console.log("note.staff: %s", note.staff);
                     continue;   // output later
+
+                    }
+                    if (sline.indexOf("<beam") >= 0)
+                    {
+                        // <beam number="1">end</beam>
+                        beam_number = this.get_xml_attribute_number(sline, "number");
+                        beam_status = this.get_xml_value(sline);
+                        note.beam_status_array[beam_number] = beam_status;
+                        //console.log("beam_status_array[%s]: %s", beam_number, note.beam_status_array[beam_number]);
+                        // fall through to output
                 }
                 // <rest>
                 // <display-step>C</display-step>
@@ -1079,7 +1193,34 @@
                 }
                 if (sline.indexOf("<chord") >= 0)
                 {
+                        if (this.pass == 1)
+                        {
                     note.chord = true;
+                            //console.log("chord_array_index = %s", chord_array_index);
+                            //console.log("PASS: %s note_array[%s].chord_index: %s", 
+                            //    this.pass, note.index - 1, this.note_array[note.index - 1].chord_index);
+                            // set for previous note
+                            if (!this.note_array[note.index - 1].chord_index)
+                            {    
+                                // first <chord is on second note in chord     
+                                chord_array_index++; // bump index if first chord entry in chord notes 
+                                            
+                                this.note_array[note.index - 1].chord_index = chord_array_index;
+                                this.note_array[note.index - 1].first_chord_note = true;    // add to min/max in pass 2
+                                //console.log("SET (-1) note_array[%s].chord_index", note.index - 1, this.note_array[note.index - 1].chord_index);
+                            
+                                
+                                this.chord_array[chord_array_index] = {index: chord_array_index, note_index: note.index - 1, 
+                                    notes: 0, max_offset: null, min_offset: null, 
+                                    stem_direction: null};
+                                //console.log("SET chord_array[%s].note_index: %s", chord_array_index, note.index - 1);
+                                
+                            }
+                            this.note_array[note.index].chord_index = chord_array_index;
+                            //console.log("SET (note_array[%s].chord_index", note.index, this.note_array[note.index].chord_index);
+  
+                        }
+
                     //console.log("note.chord: %s", note.chord);
                     continue;   // output later
 
@@ -1311,11 +1452,55 @@ f
             return;
         
         this.str_out += str + "\n";
-        console.log("add_to_output PASS: %s LEN: %s STR: %s", this.pass, this.str_out.length, str);
-        console.log("STR_OUT: %s", this.str_out.substr(0, 100));
+        //console.log("add_to_output PASS: %s LEN: %s STR: %s", this.pass, this.str_out.length, str);
+        //console.log("STR_OUT: %s", this.str_out.substr(0, 100));
 
     }
 
+    // steps above or below middle line of staff
+    osmd_transpose.get_note_offset = function(note)
+    {
+        if (attributes.clef[note.staff])
+        {
+            clef = attributes.clef[note.staff];
+        }
+        else
+        {
+            clef = attributes.clef[0];    // MuseScore does not store clefs by staff number
+        }
+        note_offset = (note.pitch.octave - clef.middle_octave) * 7 + this.step_number[note.pitch.step] - clef.middle_number;
+        //console.log("get_note_offset: pitch.octave: %s middle_octave: %s pitch.step]: %s %s middle_number: %s note_offset: %s", 
+        //    note.pitch.octave, clef.middle_octave, note.pitch.step, this.step_number[note.pitch.step], clef.middle_number,
+        //    note_offset);
+        return(note_offset);
+    }
+
+    osmd_transpose.set_chord_range = function(note)
+    {
+        let chord_data = this.chord_array[note.chord_index];
+        chord_data.notes++;
+
+        note_offset = this.get_note_offset(note);
+        if (chord_data.min_offset === null)
+        {
+            chord_data.min_offset = note_offset;
+        }
+        else
+        {
+            chord_data.min_offset = Math.min(chord_data.min_offset, note_offset);
+        }
+        if (chord_data.max_offset === null)
+        {
+            chord_data.max_offset = note_offset;
+        }
+        else
+        {
+            chord_data.max_offset = Math.max(chord_data.max_offset, note_offset);
+        }
+        // console.log("SET CHORD RANGE: note; %s chord_index: %s note_offset: %s min_offset: %s max_offset: %s",
+        //    note.index, note.chord_index, note_offset, chord_data.min_offset, chord_data.max_offset);
+    }
+    
 
     // after you get this, and changes will automatically be stored in array
     osmd_transpose.get_current_accidental = function(voice, octave, note)
@@ -1336,19 +1521,45 @@ f
         return (this.current_accidentals[voice][octave][note]);
     }
 
-    // after you get this, and changes will automatically be stored in array
-    osmd_transpose.get_last_stem = function(staff, voice)
+    // after you get this, any changes to the returned object will automatically be stored in original array
+    osmd_transpose.get_staff_data = function(measure_data, staff)
     {
         // we need to track accidentals by both voice and octave
-        if (!this.last_stem[staff])
+        // voice_data_array has the current beam and voice data for each voice in the measure by staff
+        if (!measure_data.staff_data_array[staff])
         {
-            this.last_stem[staff] = [];
+            measure_data.staff_data_array[staff] = {staff: staff, min_voice: null, max_voice: null, voice_data_array: []};
         }
-        if (!this.last_stem[staff][voice])
+        
+        return(measure_data.staff_data_array[staff]);
+    }
+
+
+    // after you get this, any changes to the returned object will automatically be stored in original array
+    osmd_transpose.get_voice_data = function(measure_data, staff, voice)
+    {
+        // we need to track accidentals by both voice and octave
+        staff_data = this.get_staff_data(measure_data, staff);
+        if (!staff_data.voice_data_array[voice])
         {
-            this.last_stem[staff][voice] = {last_direction: null, last_duration: null};
+            staff_data.voice_data_array[voice] = {last_direction: null, in_beam: false, beam_count: 0};
         }
-        return(this.last_stem[staff][voice]);
+        return(staff_data.voice_data_array[voice]);
+    }
+
+    // after you get this, any changes to the returned object will automatically be stored in original array
+    osmd_transpose.get_beam_data = function(measure_data, staff, voice)
+    {
+        // we need to track accidentals by both voice and octave
+        if (!measure_data.beam_data_array[staff])
+        {
+            measure_data.beam_data_array[staff] = [];
+        }
+        if (!measure_data.beam_data_array[staff][voice])
+        {
+            measure_data.beam_data_array[staff][voice] = [];
+        }
+        return(measure_data.beam_data_array[staff][voice]);
     }
 
 

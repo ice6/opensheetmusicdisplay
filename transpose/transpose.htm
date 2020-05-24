@@ -175,7 +175,7 @@ function get_parameters_from_elements()
     <body>
        <div class='noprint' style="font-size: 24px">
 
-        <h2>OSMD Transpose Test version 2020.05.22</h2>
+        <h2 id=version>OSMD Transpose Test</h2>
 
         Load the <a href="https://opensheetmusicdisplay.github.io/demo/">OSMD Demonstration for Transpose</a>
  
@@ -272,6 +272,9 @@ function get_parameters_from_elements()
 
         <script>
         var elt_value;
+
+        elt = document.getElementById("version");
+        elt.innerText = "OSMD Transpose Test version: " + osmd_transpose.version;
 
         
     var osmds = new Array(5);

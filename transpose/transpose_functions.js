@@ -823,9 +823,9 @@
                     {
                         note.accidental = new_accidental;
                     }
-                    if (show_debugs)
-                            console.log("snew_note: %s note.pitch.alter: %s new_accidental: %s snew_note: %s note.accidental: %s",
-                                snew_note, note.pitch.alter, new_accidental, snew_note, note.accidental);
+                        //if (show_debugs)
+                        //    console.log("snew_note: %s note.pitch.alter: %s new_accidental: %s snew_note: %s note.accidental: %s",
+                        //        snew_note, note.pitch.alter, new_accidental, snew_note, note.accidental);
 
                         // we should not need this
                         this.current_accidentals[note.voice][note.pitch.octave][snew_step] = new_accidental;
@@ -856,9 +856,11 @@
                         //    clef.middle_number, clef.middle_letter, clef.middle_octave,
                         //    note.voice, note.pitch.step, note.pitch.octave);
                         
-                        //console.log("staff_data: %s min_voice: %s max_voice: %s", staff_data.staff, staff_data.min_voice, staff_data.max_voice);
-                        //console.log("NOTE: index: %s chord_index: %s first_chord_note: %s step: %s octave: %s", 
-                        //    note.index, note.chord_index, note.first_chord_note, note.pitch.step, note.pitch.octave);
+                        if (show_debugs)
+                            console.log("staff_data: %s min_voice: %s max_voice: %s", staff_data.staff, staff_data.min_voice, staff_data.max_voice);
+                            if (show_debugs)
+                            console.log("NOTE: index: %s chord_index: %s first_chord_note: %s step: %s octave: %s", 
+                            note.index, note.chord_index, note.first_chord_note, note.pitch.step, note.pitch.octave);
                         
                         
                         if (staff_data.min_voice && staff_data.min_voice < staff_data.max_voice)
@@ -867,19 +869,22 @@
                             {
                                 // this is only for staffs with multiple voices - which we need to locate
                                 stem_direction = "down";    // other voices tend to go down
-                                //console.log("USE VOICE: %s STEM DOWN", note.voice);
+                                if (show_debugs)
+                                    console.log("USE VOICE: %s STEM DOWN", note.voice);
                             }
                             else
                             { 
                                 stem_direction = "up";    // other voices tend to go down
-                                //console.log("USE VOICE: %s STEM UP", note.voice);
+                                if (show_debugs)
+                                    console.log("USE VOICE: %s STEM UP", note.voice);
                             }
                         }
                         else if (note.chord_index !== null)
                         {
                             // get highest and lowest position of notes in chord
-                            //console.log("NOTE: %s chord_array[note.chord_index = %s]  first_chord_note: %s", 
-                            //    note.index, note.chord_index, note.first_chord_note);
+                            if (show_debugs)
+                                console.log("NOTE: %s chord_array[note.chord_index = %s]  first_chord_note: %s", 
+                                    note.index, note.chord_index, note.first_chord_note);
                             let chord_data = this.chord_array[note.chord_index];
                             
                             if (this.pass == 1)
@@ -904,8 +909,9 @@
                                     // we could handle "equal" differently
                                     stem_direction = "up"; 
                         }
-                                //console.log("PASS 2: CHORD index: %s max: %s min: %s stem_direction: %s", 
-                                //    note.chord_index, chord_data.max_offset, chord_data.min_offset, stem_direction);
+                                if (show_debugs)
+                                    console.log("PASS 2: CHORD index: %s max: %s min: %s stem_direction: %s", 
+                                        note.chord_index, chord_data.max_offset, chord_data.min_offset, stem_direction);
                             }
                             
                         }
@@ -927,16 +933,20 @@
                         }
                         else
                         {
-                                //console.log("Middle line - last or down");
+                                if (show_debugs)
+                                    console.log("Middle line - last or down");
                                 note_position = "middle";
                                 if (voice_data.last_direction)
                                     stem_direction = voice_data.last_direction;
                                 else
                                     stem_direction = "down"; 
-                                //console.log("ON MIDDLE LINE: %s", stem_direction);   
+                                if (show_debugs)
+                                    console.log("ON MIDDLE LINE: %s", stem_direction);   
                             }
                         }
 
+                        if (show_debugs)
+                                    console.log("note.beam_status_array[1]: %s", note.beam_status_array[1]);
                         // lets only combine notes in first beam for now
                         if (note.beam_status_array[1])
                         {
@@ -947,7 +957,8 @@
                                 if (this.pass == 1)
                                 {
                                     measure_data.beam_data_array[measure_data.beam_index] = {notes: 0, above_count: 0, below_count: 0};
-                                    //console.log("START beam_data_array[%s]", measure_data.beam_index);
+                                    if (show_debugs)
+                                        console.log("START beam_data_array[%s]", measure_data.beam_index);
                                 }
                             }
                             beam_data = measure_data.beam_data_array[measure_data.beam_index];
@@ -958,8 +969,9 @@
                                     beam_data.above_count++;
                                 else
                                     beam_data.below_count++;
-                                //console.log("COUNT BEAM above: %s below: %s", 
-                                //    beam_data.above_count, beam_data.below_count);
+                                if (show_debugs)
+                                    console.log("COUNT BEAM above: %s below: %s", 
+                                        beam_data.above_count, beam_data.below_count);
 
 
                             }
@@ -974,14 +986,16 @@
                                 {
                                     stem_direction = "up"; 
                                 }
-                                //console.log("USE BEAM above: %s below: %s stem_direction: %s", 
-                                //    beam_data.above_count, beam_data.below_count, stem_direction);
+                                if (show_debugs)
+                                    console.log("USE BEAM above: %s below: %s stem_direction: %s", 
+                                        beam_data.above_count, beam_data.below_count, stem_direction);
                             }
                         }
 
                         if (this.pass == 2)
                         {
-                            //console.log("USE STEM_DIRECTION: %s", stem_direction);
+                            if (show_debugs)
+                                console.log("USE STEM_DIRECTION: %s", stem_direction);
                             note.stem = stem_direction;    
                         }
                         voice_data.last_direction = note.stem;
@@ -1022,8 +1036,8 @@
                     note_xml += `<dot/>\n`;
                 if (note.accidental && note.accidental != "")
                 {
-                    if (show_debugs)
-                        console.log("<accidental>%s</accidental>\n", note.accidental);
+                        //if (show_debugs)
+                        //    console.log("<accidental>%s</accidental>\n", note.accidental);
                     note_xml += `<accidental>` + note.accidental + `</accidental>\n`;
                 }
                 if (note.stem)

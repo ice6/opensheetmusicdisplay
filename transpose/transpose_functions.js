@@ -5,7 +5,7 @@
     // create namespace if it does not exist yet
     var osmd_transpose = osmd_transpose || {};
 
-    osmd_transpose.version = "2020-05-24";
+    osmd_transpose.version = "2020-05-24 18:53";
     console.log("IN tranpose_functions.js Version: %s", osmd_transpose.version);
 
   

@@ -35,6 +35,7 @@
                 stack.push(target.nextElementSibling);
             }
 
+            console.log("TARGET: %s:", target.tagName);
             switch (target.tagName.toUpperCase()) {
                 case 'NOTE':
                     // query child
@@ -69,7 +70,7 @@
                         accidentalElem.innerHTML = transposedNote.accidental
                     }
 
-                    continue;
+                    //continue;
             }
 
             // Always traversing sibling tags 

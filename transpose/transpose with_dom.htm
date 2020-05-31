@@ -5,10 +5,10 @@
     <title>Transpose MusicXML</title>
 
     <link rel="stylesheet" href="css.css" />
-    <script src="transpose_functions.js?v=2.66"></script>
+    <script src="transpose_with_dom.js?v=2.66"></script>
     <!--  <script src="music-xml-transpose.ts"> -->
     <!-- this uses the namespace object osmd_transpose to access transpose functions.js -->
-
+    
 
 
     <script>
@@ -60,7 +60,7 @@
 
     }
 
-function get_parameters_from_elements()
+    function get_parameters_from_elements()
     {
         console.log(get_self());
         add_to_parameters("song_name");
@@ -70,7 +70,7 @@ function get_parameters_from_elements()
 
 
     }
-    
+
         function store_parameters()
         {
             console.log(get_self());
@@ -98,7 +98,7 @@ function get_parameters_from_elements()
                 console.log("load_parameters: key: %s value:  %s", key, value);
                 set_element_value(key, value);
             }
-    
+
 
         }
 
@@ -176,7 +176,7 @@ function get_parameters_from_elements()
        <div class='noprint' style="font-size: 24px">
 
         <h2 id=version>OSMD Transpose Test</h2>
-
+ 
         Load the <a href="https://opensheetmusicdisplay.github.io/demo/">OSMD Demonstration for Transpose</a>
  
                     <p class=font_element>
@@ -219,7 +219,7 @@ function get_parameters_from_elements()
                                 <option value = "G">G / Em</option>
                                     <!-- <option value = "G#">G#</option> -->
                             </select>
-                            
+
             <form >
                 <h3> Select Music XML file for transpose</h3>
                 <input type='file' id="get_file" accept=".xml,.musicxml" onchange='openFile(event);'>
@@ -274,7 +274,9 @@ function get_parameters_from_elements()
         var elt_value;
 
         elt = document.getElementById("version");
-        elt.innerText = "OSMD Transpose Test version: " + osmd_transpose.version;
+        // make sure this is define at this point
+        if (typeof(osmd_transpose) != "undefined")
+            elt.innerText = "OSMD Transpose Test version: " + osmd_transpose.version;
 
         
     var osmds = new Array(5);
@@ -378,31 +380,16 @@ function get_parameters_from_elements()
 
     var xml_string_loaded; // loaded from disk  
     var xml_string_passed; //passed in local storage
-
- 
-
-
- 
-    
-
-
-
-
-
-
-
+    var xml_string;
 
     function do_transpose() {
         console.log("DO TRANSPOSE");
-        //get_caller();
-
-        
-        
+        //this.get_dom();
+ 
         //console.log("DO_SONG: xml_string_passed(0, 100): %s", xml_string_passed.substr(0, 100));
 
         get_parameters_from_elements(); // get latest parameters
         xml_string = xml_string_loaded;
-
         
         if (!xml_string)
             throw("NO XML STRING");
@@ -418,7 +405,9 @@ function get_parameters_from_elements()
         if (parameters.transpose_key != "None");
         {
             // xml_string is used for file save, display and copy to clipboard.
-            xml_string = osmd_transpose.transpose_xml(parameters, xml_string);
+            xml_string = osmd_transpose.transpose_xml_dom(parameters, xml_string);
+            //osmd_transpose.parse_with_pop(parameters, xml_string);
+            //throw("AFTER parse");
 
             elt = document.getElementById("transposed_score");
             elt.innerText = xml_string;
@@ -442,13 +431,16 @@ function get_parameters_from_elements()
             elt = document.getElementById("prepare_output_file");
             elt.style.display = "block";
 
+
+           
         }
-  
-
-
-   
     }
+
+
+
         //</script>
     
     </body >
 </html >
+
+

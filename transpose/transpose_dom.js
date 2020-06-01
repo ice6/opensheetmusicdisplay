@@ -3,7 +3,7 @@
     // create osmd_transpose if it does not exist yet
     var osmd_transpose = osmd_transpose || {};
 
-    osmd_transpose.version = "2020-05-24 18:53";
+    osmd_transpose.version = "2020-06-01 7:11";
     console.log("IN tranpose_functions.js Version: %s", osmd_transpose.version);
 
 

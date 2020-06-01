@@ -3,7 +3,7 @@
     // create osmd_transpose if it does not exist yet
     var osmd_transpose = osmd_transpose || {};
 
-    osmd_transpose.version = "2020-06-01 7:22";
+    osmd_transpose.version = "2020-06-01 12:27";
     console.log("IN tranpose_functions.js Version: %s", osmd_transpose.version);
 
 
@@ -39,8 +39,7 @@ osmd_transpose.initialize = function()
             sline = caller_line2.substr(ipos4+1, ipos3-ipos4 - 1)
             scaller = "***Called by: " + sname + " " + sline;
         }
-        if (this.show_output)
-            console.log("SCALLER: %s", scaller);
+
         return (scaller);
 
     }
@@ -327,12 +326,12 @@ osmd_transpose.initialize = function()
     this.clef_positions["C"][5] = {middle_letter: "F", middle_octave: 3, middle_number: 3};
 
     // all measures
-    this.measure_data_array = [];
+    this.part_array = {};
 
     this.transpose_pitch = function(old_step, old_alter, old_octave) 
     {
         let parameters = this.parameters;
-        let show_output = parameters.show_output;
+        let show_output = this.show_output;
 
         // move to local variables for easier access
         let old_key = this.old_key;
@@ -448,42 +447,28 @@ osmd_transpose.initialize = function()
     this.transpose_xml = function(parameters, xml_string_in)
     {
         this.parameters = parameters;
-        let show_output = parameters.show_output;
+        this.show_output = parameters.show_output;
+        let show_output = this.show_output;
         //console.log("show_output: %s (%s)", show_output, show_output? "T" : "F");
 
-        // for testing
-        let rawXml = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-            <note default-x="294.17" default-y="-30.00">
-                <chord/>
-                <pitch>
-                <step>B</step>
-                <alter>-1</alter>
-                <octave>2</octave>
-                </pitch>
-                <duration>1</duration>
-                <voice>1</voice>
-                <type>eighth</type>
-                <stem>up</stem>
-            </note>`
-
-        rawXml = xml_string_in;
+        this.xml_string = xml_string_in;    // input string
 
         // save the first two lines of the file to put onto output.
 
         // find line with <score
-        let ipos = rawXml.indexOf("<score");
+        let ipos = this.xml_string.indexOf("<score");
         if (ipos < 0)
         {
             console.error("<score not found in xml file");
         }
-        let xml_header = rawXml.substr(0, ipos);
+        let xml_header = this.xml_string.substr(0, ipos);
 
         console.log("XML_HEADER: %s", xml_header);
 
         let dom_object;
 
         const parser = new DOMParser();
-        dom_object = parser.parseFromString(rawXml, 'application/xml');
+        dom_object = parser.parseFromString(this.xml_string, 'application/xml');
 
         this.transpose_dom_object(parameters, dom_object);
 
@@ -493,9 +478,7 @@ osmd_transpose.initialize = function()
 
         xml_out = xml_header + xml_transposed;
 
-        console.log("XML_OUT length: %s", xml_out.length);
-        console.log("XML_OUT START: %s", xml_out.substr(0,200));
-        console.log("XML_OUT END: %s", xml_out.substr(xml_out.length-200));
+        //console.log("XML_OUT %s", xml_out);
 
         return(xml_out);
 
@@ -504,7 +487,9 @@ osmd_transpose.initialize = function()
     this.transpose_dom_object = function(parameters, dom_object)
     {
         this.parameters = parameters;
-        let show_output = parameters.show_output;
+        this.show_output = parameters.show_output;
+        let show_output = this.show_output;
+
         //console.log("show_output: %s (%s)", show_output, show_output? "T" : "F");
 
     // 'var' is for debugging, we will but it into a different type later
@@ -547,6 +532,12 @@ osmd_transpose.initialize = function()
       case "part":
       part_element = score_element;
 
+      // <part id="P2">
+      let part_id = part_element.getAttribute("id");
+      this.part_array[part_id] = {measure_data_array: []};
+      let measure_data_array = this.part_array[part_id].measure_data_array;
+      
+
       part_children = part_element.children;
       //console.log("PART children: %s", part_children.length);
       for (ipart = 0; ipart < part_children.length; ipart++)
@@ -563,7 +554,7 @@ osmd_transpose.initialize = function()
                 if (show_output)
                     console.log("CASE: %s", part_child.tagName);
                 let measure_element = part_child;
-                measure_number++;
+                measure_number = measure_element.getAttribute("number");
                 if (show_output)
                 {
                     this.show_dom_element(measure_element, "MEASURE: " + measure_number);
@@ -607,6 +598,8 @@ osmd_transpose.initialize = function()
                             let attribute_element = measure_child;
                             if (show_output)
                                 this.show_dom_element(attribute_element);
+
+                            let attributes = this.attributes;   // access in this scope
 
                             // get the attributes we want to remember
                             let attribute_children = attribute_element.children;
@@ -743,7 +736,7 @@ osmd_transpose.initialize = function()
                             note = {index: note_index, rest: null, chord: null,  chord_index: null, first_chord_note: false,
                                 pitch: null, duration: null, 
                                 instrument: null, voice: 0, type: null, dot: null, accidental: null, stem: null, staff: 0,
-                                notations: null, lyric: null, beam_status_array: [], 
+                                notations: null, lyric: null, beam_index: null, beam_status: null, 
                                 note_element: note_element, pitch_element: null };
 
                             measure_data.note_data_array[note_index] = note;
@@ -769,9 +762,25 @@ osmd_transpose.initialize = function()
                                         beam_number = beam_element.getAttribute("number");
                                         beam_status = this.get_element_value(beam_element);
                                         
-                                        note.beam_status_array[beam_number] = beam_status;
+                                        note.beam_status = beam_status;
+
+                                        if (beam_status == "begin")
+                                        {
+                                            beam_index++;
+
+                                            measure_data.beam_data_array[beam_index] = {first_note: note.index, last_note: note.index,
+                                                above_count: 0, below_count: 0, beam_stem_direction: null};
                                         if (show_output)
-                                            console.log("beam_status_array[%s]: %s", beam_number, note.beam_status_array[beam_number]);
+                                                console.log("BEGIN beam_index: %s", beam_index);
+
+                                        }
+                                        // chord notes may be added to beam_array later
+                                        measure_data.beam_data_array[beam_index].last_note = note_index;
+                                        note.beam_index = beam_index;
+
+                                        if (show_output)
+                                            console.log("NOTE: %s BEAM beam_status: %s beam_index: %s", 
+                                                note.index, beam_status, beam_index);
                                         break;
                                             
                                     case "chord":
@@ -787,7 +796,7 @@ osmd_transpose.initialize = function()
                                             chord_index++; 
                                             chord_data = {index: chord_index, first_note: note_index - 1, last_note: note_index,
                                                 notes: 0, max_offset: null, min_offset: null, 
-                                                new_stem_direction: null};
+                                                chord_stem_direction: null};
                                             measure_data.chord_data_array[chord_index] = chord_data;
                                             measure_data.note_data_array[note_index - 1].chord = true;
                                             measure_data.note_data_array[note_index - 1].chord_index = chord_index;
@@ -884,6 +893,19 @@ osmd_transpose.initialize = function()
                                 }
                             } // end of note children
 
+                            // see if in beam as part of a chord
+                            if (note_index > 0 && note.chord)
+                            {
+                                old_note = measure_data.note_data_array[note_index - 1];
+                                if (old_note.beam_index)
+                                {
+                                    note.beam_status = "chord in beam";
+                                    note.beam_index = old_note.beam_index;
+                                   // console.log("NOTE: %s CHORD IN BEAM: beam_index: %s", note.index, note.beam_index);
+                                }
+                            }
+
+
                             // we need to track accidentals by both voice and octave
                             // voice_data_array has the last_note for each voice
                             if (!measure_data.staff_data_array[note.staff])
@@ -907,36 +929,6 @@ osmd_transpose.initialize = function()
                                 console.log("STAFF: %s VOICE: %s min_voice: %s max_voice: %s", 
                                     note.staff, note.voice, staff_data.min_voice, staff_data.max_voice);
 
-                            // beam data
-                            // lets only combine notes in first beam for now
-                            if (note.beam_status_array[1])
-                            {
-                                beam_status = note.beam_status_array[1];
-
-                                if (beam_status == "begin")
-                                {
-                                    beam_index++;
-
-                                    measure_data.beam_data_array[beam_index] = {notes: 0, first_note: note.index, last_note: note.index,
-                                        above_count: 0, below_count: 0, new_stem_direction: null};
-                                    if (show_output)
-                                        console.log("START beam_data_array[%s]", beam_index);
-
-                                }
-                                beam_data = measure_data.beam_data_array[beam_index];
-                            
-                                beam_data.notes++;
-                                beam_data.last_note = note.index;
-
-                                note_offset = this.get_note_offset(note);
-                                if (note_offset > 0)
-                                    beam_data.above_count++;
-                                else
-                                    beam_data.below_count++;
-                                if (show_output)
-                                    console.log("beam_index: %s COUNT BEAM above: %s below: %s", 
-                                        beam_index, beam_data.above_count, beam_data.below_count);
-                            }
 
                             note_index++;
                             break;
@@ -955,24 +947,57 @@ osmd_transpose.initialize = function()
                 } // end loop measure children
 
                 // get stem direction for beams
+
+                // beam data
+                for (let inote = 0; inote < measure_data.note_data_array.length; inote++)
+                {
+                    note =  measure_data.note_data_array[inote];
+                    if (note.rest)
+                    {
+                        if (show_output)
+                            console.log("SKIP REST: inote: %s", inote);
+                        continue;   // skip rests
+                    }
+
+                    if (note.beam_index)
+                    {
+ 
+                        beam_data = measure_data.beam_data_array[note.beam_index];
+                    
+                        beam_data.last_note = note.index;
+
+                        // ADH - currently this gets only the first note of a chord
+                        note_offset = this.get_note_offset(note);
+                        if (note_offset > 0)
+                            beam_data.above_count++;
+                        else
+                            beam_data.below_count++;
+                        if (show_output)
+                            console.log("NOTE: %s beam_index: %s beam_status: %s COUNT BEAM above: %s below: %s", 
+                                note.index, beam_index, beam_status, beam_data.above_count, beam_data.below_count);
+                    }
+                }
+
+
+                // get stem direction for beams from number of notes above or below the center
                 for (let ibeam = 1; ibeam < measure_data.beam_data_array.length; ibeam++)
                 {
                     let  beam_data = measure_data.beam_data_array[ibeam];
                     if (beam_data.above_count > beam_data.below_count)
                     {
-                        beam_data.new_stem_direction = "down"; 
+                        beam_data.beam_stem_direction = "down"; 
                     }
                     else if (beam_data.above_count < beam_data.below_count)
                     {
-                        beam_data.new_stem_direction = "up"; 
+                        beam_data.beam_stem_direction = "up"; 
                     }
                     else
                     {
-                        beam_data.new_stem_direction = "equal";  // use previous note 
+                        beam_data.beam_stem_direction = "equal";  // use previous note 
                     }
                     if (show_output)
-                        console.log("USE BEAM above: %s below: %s beam_data.new_stem_direction: %s", 
-                            beam_data.above_count, beam_data.below_count, beam_data.new_stem_direction);
+                        console.log("ibeam: %s USE BEAM above: %s below: %s beam_data.beam_stem_direction: %s", 
+                            ibeam, beam_data.above_count, beam_data.below_count, beam_data.beam_stem_direction);
                 }
 
                 // lets get the notes for the chords
@@ -1016,16 +1041,16 @@ osmd_transpose.initialize = function()
                     // get stem direction
                     if (Math.abs(chord_data.max_offset) > Math.abs(chord_data.min_offset))
                     {
-                        chord_data.new_stem_direction = "down"; // most notes are above the center - point down
+                        chord_data.chord_stem_direction = "down"; // most notes are above the center - point down
                     }
                     else
                     {
                         // we could handle "equal" differently
-                        chord_data.new_stem_direction = "up"; 
+                        chord_data.chord_stem_direction = "up"; 
                     }
                     if (show_output)
-                        console.log("CHORD index: %s max: %s min: %s new_stem_direction: %s", 
-                            note.chord_index, chord_data.max_offset, chord_data.min_offset, chord_data.new_stem_direction);
+                        console.log("CHORD index: %s max: %s min: %s chord_stem_direction: %s", 
+                            note.chord_index, chord_data.max_offset, chord_data.min_offset, chord_data.chord_stem_direction);
                 }
 
                 // we need to get note_element again, pr store it in a new 'note_element_array' for each measure
@@ -1043,14 +1068,27 @@ osmd_transpose.initialize = function()
                         continue;   // skip rests
                     }
                     note_element = note.note_element;   // saved with note
+
+                    staff_data = measure_data.staff_data_array[note.staff];
+
                     if (!staff_data.voice_data_array[note.voice])
                     {
                         staff_data.voice_data_array[note.voice] = {last_direction: null};
                     }
                     voice_data = staff_data.voice_data_array[note.voice];
 
+                    if (show_output)
+                        console.log("NOTE: %s staff: %s voice: %s last_direction: %s", note.index, note.staff, note.voice, voice_data.last_direction);
+
+                    // 1, If multiple voices - put one voice up and all others
+                    // 2. if in a beam, put all notes in the beam in the ame direction
+                    // 3. if ia a chord, count notes above or below the center line
+                    // 4. look at individual note.
+
                     if (staff_data.min_voice && staff_data.min_voice < staff_data.max_voice)
                     {
+                        if (show_output)
+                            console.log("Multiple Voices");
                         // if there is more than one voice in measure and staff, point stems by voice
                         if (note.voice >  staff_data.min_voice)
                         {
@@ -1066,11 +1104,35 @@ osmd_transpose.initialize = function()
                                 console.log("USE VOICE: %s STEM UP", note.voice);
                         }
                     }
+                    else if (note.beam_index)
+                    {
+                         // lets only combine notes in first beam for now
+                        
+                        beam_data = measure_data.beam_data_array[note.beam_index];
+                        //this.show_object(beam_data, "beam_data");
+                        if (show_output)
+                            console.log("NOTE: %s IN BEAM: beam_index: %s beam_data.beam_stem_direction: %s", note.index, beam_index, beam_data.beam_stem_direction);
+                       
+                        if (beam_data.beam_stem_direction == "equal")
+                        {
+                            // set to last not direction
+                            // use stem directiomn from above
+
+                        }     
+                        else
+                        {  
+                            new_stem_direction =  beam_data.beam_stem_direction;
+                        }
+                        if (show_output)
+                            console.log("NOTE: %s beam_index: s: beam_stem_direction: %s new_stem_direction: %s", 
+                                note.index, note.beam_index, beam_data.beam_stem_direction, new_stem_direction);
+                        
+                    }
                     else if (note.chord_index !== null)
                     {
                         // chord - get highest and lowest position of notes in chord
                         if (show_output)
-                            console.log("NOTE: %s chord_data_array[note.chord_index = %s]  first_chord_note: %s", 
+                            console.log("IN CHORD: NOTE: %s chord_data_array[note.chord_index = %s]  first_chord_note: %s", 
                                 note.index, note.chord_index, note.first_chord_note);
                         let chord_data = measure_data.chord_data_array[note.chord_index];
 
@@ -1122,30 +1184,11 @@ osmd_transpose.initialize = function()
                             console.log("note_offset: %s note_position: %s new_stem_direction: %s", note_offset, note_position, new_stem_direction);
                     }
 
-                    // lets only combine notes in first beam for now
-                    if (note.beam_status_array[1])
-                    {
-                        beam_status = note.beam_status_array[1];
-                        if (show_output)
-                            console.log("beam_index: %s", beam_index);
-                        beam_data = measure_data.beam_data_array[beam_index];
-                        //this.show_object(beam_data, "beam_data");
-                       
-                        if (beam_data.new_stem_direction == "equal")
-                        {
-                            // set to last not direction
-                            beam_data.new_stem_direction = new_stem_direction; // dstem directiomn from above
 
-                        }       
-                        new_stem_direction =  beam_data.new_stem_direction;
-                        if (show_output)
-                            console.log("USE BEAM above: %s below: %s new_stem_direction: %s", 
-                                beam_data.above_count, beam_data.below_count, new_stem_direction);
                         
-                    }
 
                     if (show_output)
-                        console.log("USE new_stem_direction: %s", new_stem_direction);
+                        console.log("NOTE: %s USE new_stem_direction: %s", note.index, new_stem_direction);
                     note.new_stem_direction = new_stem_direction;    
  
                     voice_data.last_direction = note.new_stem_direction;
@@ -1368,13 +1411,13 @@ osmd_transpose.initialize = function()
     {
         //console.log("get_note_offset %s", this.get_caller());
         //this.show_object(note, "note");
-        if (attributes.clef[note.staff])
+        if (this.attributes.clef[note.staff])
         {
-            clef = attributes.clef[note.staff];
+            clef = this.attributes.clef[note.staff];
         }
         else
         {
-            clef = attributes.clef[0];    // MuseScore does not store clefs by staff number
+            clef = this.attributes.clef[0];    // MuseScore does not store clefs by staff number
         }
         note_offset = (note.transposed.new_octave - clef.middle_octave) * 7 + this.step_number[note.transposed.new_step] - clef.middle_number;
         if (this.show_output)
@@ -1416,7 +1459,8 @@ osmd_transpose.initialize = function()
 
 osmd_transpose.initialize();
 
-var measure_data_array = osmd_transpose.measure_data_array; // for debugging
-var attributes = osmd_transpose.attributes;
+var pa = osmd_transpose.part_array;
+//var measure_data_array = osmd_transpose.measure_data_array; // for debugging
+//var attributes = osmd_transpose.attributes;
 
   

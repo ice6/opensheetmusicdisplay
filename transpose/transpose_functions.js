@@ -302,17 +302,20 @@
         let parameters = this.parameters;
         let show_output = parameters.show_output;
 
+        // move to local variables for easier access
+        let old_key = this.old_key;
+        let new_key = this.new_key;
+
         if (show_output)
-            console.log("transpose(): old_step: %s old_alter: %s old_octave: %s", old_step, old_alter, old_octave)
+            console.log("transpose(): old_key: %s new_key: %s old_step: %s old_alter: %s old_octave: %s", 
+            old_key, new_key, old_step, old_alter, old_octave);
         let old_note = old_step;
         if (old_alter == 1)
             old_note += "#";
         else if (old_alter == -1)
             old_note += "b";
 
-        // move to local variables for easier access
-        let old_key = this.old_key;
-        let new_key = this.new_key;
+        
         
         
         if (show_output)
@@ -530,8 +533,6 @@
                         if (show_output)
                             console.log("attributes.staves: %s SLINE: %s", attributes.staves, sline);
                     }
-                    // fall through to write sline
-                }
 
                 if (sline.indexOf("<clef-octave-change>") >= 0)
                 {
@@ -638,6 +639,8 @@
                     }
                     // fall through to output
             }
+                    // fall through to write sline
+                }
 
             if (sline.indexOf("<measure") >= 0)
             {

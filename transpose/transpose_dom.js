@@ -470,10 +470,15 @@ osmd_transpose.initialize = function()
 
         // save the first two lines of the file to put onto output.
 
-        let lines = rawXml.split("\n");
-        let xml_header = lines[0] + "\n" + lines[1] + "\n";
+        // find line with <score
+        let ipos = rawXml.indexOf("<score");
+        if (ipos < 0)
+        {
+            console.error("<score not found in xml file");
+        }
+        let xml_header = rawXml.substr(0, ipos);
 
-        console.log("FIRST THREE LINES OF INPUT: \nLINE 1: %s\nLINE 2: %s\nLINE 3:%s", lines[0], lines[1], lines[2]);
+        console.log("XML_HEADER: %s", xml_header);
 
         let dom_object;
 

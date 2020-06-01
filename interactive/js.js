@@ -1,6 +1,6 @@
 function handleNoteClick(verticalVoiceEntriesIndex) {
     console.log('verticalVoiceEntriesIndex', verticalVoiceEntriesIndex)
-    window.alert(`verticalVoiceEntriesIndex is ${verticalVoiceEntriesIndex}, you can use this for playback`)
+    document.getElementById('debug').innerHTML = `debug: verticalVoiceEntriesIndex is ${verticalVoiceEntriesIndex}`
 }
 
 function interactive () {

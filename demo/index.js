@@ -722,6 +722,9 @@ import { OpenSheetMusicDisplay } from '../src/OpenSheetMusicDisplay/OpenSheetMus
         }
         // Enable controls again
         enable();
+        if (typeof interactive === 'function') {
+            interactive()
+        }
     }
 
     function logCanvasSize() {

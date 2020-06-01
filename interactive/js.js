@@ -1,9 +1,11 @@
 function handleNoteClick(verticalVoiceEntriesIndex) {
     console.log('verticalVoiceEntriesIndex', verticalVoiceEntriesIndex)
+    window.alert(`verticalVoiceEntriesIndex is ${verticalVoiceEntriesIndex}, you can use this for playback`)
 }
 
 function interactive () {
     let verticalVoiceEntriesIndex = 0
+    osmd.cursor.reset()
     const it = osmd.cursor.iterator
     while (!it.EndReached) {
         const voices = it.CurrentVoiceEntries
@@ -25,4 +27,5 @@ function interactive () {
         it.moveToNext()
         verticalVoiceEntriesIndex++
     }
+    osmd.cursor.reset()
 }

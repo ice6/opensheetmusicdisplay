@@ -1,0 +1,7 @@
+.vf-stavenote {
+    cursor: pointer;
+}
+.vf-stavenote:hover path{
+    fill: red;
+    stroke: red;
+}

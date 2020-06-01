@@ -1,8 +1,8 @@
 import {TransposeConstant} from './music-xml-tranpose-constant'
 import {MXLHelper} from '../../src/Common/FileIO/Mxl'
-import {AJAX} from '../src/opensheetmusicdisplay/AJAX'
+import {AJAX} from '../../src/opensheetmusicdisplay/AJAX'
 
-const main = () => {
+export const main = () => {
     const transposer = new MusicXmlTransposeService();
     transposer.load(this.xmlPath).then(() => {
       transposer.transpose('E');
@@ -27,7 +27,7 @@ export class MusicXmlTransposeService {
     this.transposeDirection = direction;
 
     let divisions = 0;
-    let mesauresCnt = 0;
+    // let mesauresCnt = 0;
     let lastNoteDuration = 0;
     let lastStemDirection = '';
     let currentAccidentals = {};
@@ -47,7 +47,7 @@ export class MusicXmlTransposeService {
           break;
 
         case 'MEASURES':
-          mesauresCnt++;
+          //mesauresCnt++;
           lastNoteDuration = 0;
           lastStemDirection = '';
           currentAccidentals = { ...TransposeConstant.accidentals_in_key[this.transposeKey] };

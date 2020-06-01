@@ -3,7 +3,7 @@
     // create osmd_transpose if it does not exist yet
     var osmd_transpose = osmd_transpose || {};
 
-    osmd_transpose.version = "2020-06-01 7:11";
+    osmd_transpose.version = "2020-06-01 7:22";
     console.log("IN tranpose_functions.js Version: %s", osmd_transpose.version);
 
 
@@ -473,7 +473,7 @@ osmd_transpose.initialize = function()
         let lines = rawXml.split("\n");
         let xml_header = lines[0] + "\n" + lines[1] + "\n";
 
-        //lines = null;
+        console.log("FIRST THREE LINES OF INPUT: \nLINE 1: %s\nLINE 2: %s\nLINE 3:%s", lines[0], lines[1], lines[2]);
 
         let dom_object;
 

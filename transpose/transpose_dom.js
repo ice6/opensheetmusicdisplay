@@ -488,6 +488,10 @@ osmd_transpose.initialize = function()
 
         xml_out = xml_header + xml_transposed;
 
+        console.log("XML_OUT length: %s", xml_out.length);
+        console.log("XML_OUT START: %s", xml_out.substr(0,200));
+        console.log("XML_OUT END: %s", xml_out.substr(xml_out.length-200));
+
         return(xml_out);
 
     }

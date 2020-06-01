@@ -830,7 +830,7 @@
                         //    console.log("snew_note: %s note.pitch.alter: %s new_accidental: %s snew_note: %s note.accidental: %s",
                         //        snew_note, note.pitch.alter, new_accidental, snew_note, note.accidental);
 
-                        // we should not need this
+                        // we should not need this??? (5/30/ADH)
                         this.current_accidentals[note.voice][note.pitch.octave][snew_step] = new_accidental;
 
                         pitch_xml += `  <octave>` + note.pitch.octave + `</octave>\n`;

@@ -795,7 +795,7 @@ osmd_transpose.initialize = function()
                                         break;
 
                                     case "duration":
-                                        note.dot = this.get_element_value_numeric(note_child);
+                                        note.duration = this.get_element_value_numeric(note_child);
                                         break;
 
                                     case "instrument":
@@ -1214,12 +1214,19 @@ osmd_transpose.initialize = function()
                         if (!note.accidental && accidental_to_use != "")
                         {
                             // there was no existing accidental element, so add the new one at end
-                            //console.log("*** INSERT ACCIDENTAL ***: %s ***", accidental_to_use);
-                            
+                            console.log("*** INSERT ACCIDENTAL ***: %s ***", accidental_to_use);
+                            //this.show_dom_element(note_element, "NOTE before accidental insert");
+                            console.log("note.dot: %s", note.dot);
                             if (note.dot)
+                            {   
                                 this.insert_dom_element_after(note_element, "dot", "accidental", accidental_to_use);
+                            }
                             else
+                            {
                                 this.insert_dom_element_after(note_element, "type", "accidental", accidental_to_use);
+                            }
+                            
+                            //this.show_dom_element(note_element, "NOTE after accidental insert");
                             //throw("INSERT ACCIDENTAL");
                         }
                         else if (note.accidental && accidental_to_use != "")

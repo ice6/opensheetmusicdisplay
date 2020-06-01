@@ -859,6 +859,9 @@ osmd_transpose.initialize = function()
                                     case "tie":
                                         break;
 
+                                    case "grace":
+                                        break;
+
                                     case "type":
                                         note.type = this.get_element_value(note_child);
                                         break;

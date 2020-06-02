@@ -59,7 +59,12 @@ osmd_transpose.initialize = function()
     {
         if (!what)
             what = "";
-        console.log("**********\nshow_dom_element: %s - %s %s", parent_element.tagName, what, this.get_caller());
+        parent = parent_element.parentElement;
+        if (parent)
+            sparent = parent.tagName;
+        else    
+            sparent = "None";
+        console.log("**********\nshow_dom_element: %s - %s PARENT: %s %s", parent_element.tagName, what, sparent, this.get_caller());
         console.log("type: %s is_array: %s", typeof(parent_element), Array.isArray(parent_element));
         // display first level sub-elements
 
@@ -67,8 +72,18 @@ osmd_transpose.initialize = function()
         //console.log("CHILDREN: %s", children.length);
         for (ii = 0; ii < children.length; ii++)
         {
-            child = children[ii];
-            console.log("CHILD %s: %s\n%s", ii, child.tagName, child.innerHTML);
+            let child = children[ii];
+            // console.log("CHILD %s: %s", ii, child.tagName);
+            let sname = child.tagName;
+            let satt = "";
+            if (child.attributes)
+            {
+                for (let ia = 0; ia < child.attributes.length && ia < 3; ia++)
+                {
+                    satt += child.attributes[ia].nodeName + "=\"" + child.attributes[ia].value + "\" ";
+                }
+            }
+            console.log("- %s %s", sname, satt);
         }
         return;
         let sub_elements = parent_element.querySelectorAll("*");
@@ -518,10 +533,10 @@ osmd_transpose.initialize = function()
     let count = 0;  // only process a few lines for testing
 
 
-    let top_element = dom_object.firstElementChild; // score-partwise
+    let score_partwise_element = dom_object.firstElementChild; // score-partwise
     
-    let top_children = top_element.children;
-    //console.log("top_element: %s top children: %s", top_element.tagName, top_children.length);
+    let top_children = score_partwise_element.children;
+    //console.log("score_partwise_element: %s top children: %s", score_partwise_element.tagName, top_children.length);
     for (itop = 0; itop < top_children.length; itop++)
     {
     score_element = top_children[itop];

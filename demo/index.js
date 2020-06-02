@@ -601,7 +601,7 @@ import { OpenSheetMusicDisplay } from '../src/OpenSheetMusicDisplay/OpenSheetMus
             let res = await fetch(str);
             str = await res.text()
         }
-        if (tranposeTo !== undefined) {
+        if (tranposeTo !== undefined && tranposeTo != 'None') {
             window.originalMusicXML = str
             str = osmd_transpose.transpose_xml({transpose_key: tranposeTo, transpose_direction: tranposeDirectionSelector.value}, str)
         }

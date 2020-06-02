@@ -446,6 +446,9 @@ osmd_transpose.initialize = function()
 
     this.transpose_xml = function(parameters, xml_string_in)
     {
+        if (parameters.transpose_key == "None") {
+            return(xml_string_in);
+        }
         this.parameters = parameters;
         this.show_output = parameters.show_output;
         let show_output = this.show_output;

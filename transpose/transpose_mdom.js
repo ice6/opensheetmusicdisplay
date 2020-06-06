@@ -1,25 +1,12 @@
-﻿
+﻿console.log("IN TRANSPOSE_MDOM.JS");
 
-    // create osmd_transpose if it does not exist yet
-    var osmd_transpose = osmd_transpose || {};
+// the routine which uses this needs something like:
+// var MDOM = new MusicDOM(); 
 
-    osmd_transpose.version = "2020-05-24 18:53";
-    console.log("IN tranpose_functions.js Version: %s", osmd_transpose.version);
-
-
-osmd_transpose.initialize = function() 
-{
-    console.log("IN osmd_transpose.initialize");
-    this.error_stack2;
-    this.caller_line2;
-    this.caller_stack_array;
-
-    this.part_child; // for debug
-    this.dom_object;
+function MusicDOM() {
 
     this.show_all = false;
-
-    const SKIP_ERROR = true;    // skip error in called functions
+    this.SKIP_ERROR = true; // use this to skip error messages in DOM calls
 
     this.get_caller = function() {
         error_stack2 = (new Error).stack;
@@ -39,38 +26,43 @@ osmd_transpose.initialize = function()
             sline = caller_line2.substr(ipos4+1, ipos3-ipos4 - 1)
             scaller = "***Called by: " + sname + " " + sline;
         }
-        if (this.show_output)
-            console.log("SCALLER: %s", scaller);
+
         return (scaller);
 
-    }
-
-    this.show_object = function(object, what)
-    {
-        if (!what)
-            what = "Object";
-        if (object)
-            sout = JSON.stringify(object).replace(/,"/g, "\n\"");
-        else
-            sout = "undefined";
-        console.log("%s: %s %s", what, sout, this.get_caller());
     }
 
     this.show_dom_element = function(parent_element, what)
     {
         if (!what)
             what = "";
-        console.log("**********\nshow_dom_element: %s - %s %s", parent_element.tagName, what, this.get_caller());
-        console.log("type: %s is_array: %s", typeof(parent_element), Array.isArray(parent_element));
+        parent = parent_element.parentElement;
+        if (parent)
+            sparent = parent.tagName;
+        else    
+            sparent = "None";
+        console.log("**********\nshow_dom_element: %s - %s PARENT: %s %s", parent_element.tagName, what, sparent, this.get_caller());
+        //console.log("type: %s is_array: %s", typeof(parent_element), Array.isArray(parent_element));
         // display first level sub-elements
 
         children = parent_element.children;
         //console.log("CHILDREN: %s", children.length);
         for (ii = 0; ii < children.length; ii++)
         {
-            child = children[ii];
-            console.log("CHILD %s: %s\n%s", ii, child.tagName, child.innerHTML);
+            let child_element = children[ii];
+            // console.log("CHILD %s: %s", ii, child_element.tagName);
+            let sname = child_element.tagName;
+            let satt = "";
+            if (child_element.attributes)
+            {
+                for (let ia = 0; ia < child_element.attributes.length && ia < 3; ia++)
+                {
+                    satt += child_element.attributes[ia].nodeName + "=\"" + child_element.attributes[ia].value + "\" ";
+                }
+            }
+            let svalue = this.get_element_value(child_element);
+            console.log("- %s SATT: %s VALUE: %s", sname, satt, svalue);
         }
+        
         return;
         let sub_elements = parent_element.querySelectorAll("*");
         //console.log("%s sub-elements: %s", parent_element.tagName,  sub_elements.length);
@@ -95,6 +87,28 @@ osmd_transpose.initialize = function()
         let value = sub_element.innerHTML;
         console.log("%s- %s: %s", sindent, name, value);
  
+    }
+
+    // const duration = +durationElem.innerHTML;
+    this.get_dom_element_value = function(parent_element, name)
+    {
+        let sub_element = parent_element.querySelector(name);
+        if (!sub_element)
+        {
+            console.error("get_dom_element_value sub_element not found: %s %s", parent_element.tagName, name);
+            return("");
+        }
+        let value = sub_element.innerHTML;
+        return(value);
+    }
+    this.get_dom_element_value_numeric = function(parent_element, name)
+    {
+        let value = this.get_dom_element_value(parent_element, name);
+        let number = Number(value);
+        if (number == "NaN")
+            console.error("Bad Numeric Value: %s name: %s: %s", parent_element.tagName, name, value, number);
+        console.log("get_dom_element_value_numeric: %s %s: value: '%s' number: %s", parent_element.tagName, name, value, number);
+        return(number);
     }
 
     // let duration = +duration_elem.innerHTML;
@@ -146,7 +160,7 @@ osmd_transpose.initialize = function()
     this.change_dom_element_value = function(parent_element, name, value)
     {
         if (this.show_output)
-            console.log("*** change_dom_element_value: %s %s --> %s", parent_element.tagName, name, value);
+            console.log("*** change_dom_element_value: %s %s --> %s: %s", parent_element.tagName, name, value, this.get_caller());
         let sub_element = parent_element.querySelector(name);
         if (!sub_element)
         {
@@ -158,29 +172,58 @@ osmd_transpose.initialize = function()
     }
 
     var element;
-    // this.insert_dom_element_after(pitch_elem, "step", "alter", note.transposed.new_alter);
-    this.insert_dom_element_after = function(parent_element, existing, name, value)
+    // this.insert_dom_value_after(pitch_elem, "step", "alter", note.transposed.new_alter);
+    this.insert_dom_value_after = function(parent_element, existing_name, new_name, value)
     {
         if (this.show_output)
-            console.log("*** insert_dom_element_after: parent_element: %s name:  %s existing: %s --> %s", 
-            parent_element.tagName, name, existing, value);
-        let existing_element = parent_element.querySelector(existing);
+            console.log("*** insert_dom_value_after: parent_element: %s new_name:  %s existing_name: %s --> %s", 
+            parent_element.tagName, new_name, existing_name, value);
+
+        // create new element with value
+        let new_element = document.createElementNS('', new_name);
+        new_element.innerHTML = value;
+
+        //console.log("outerHTML: %s", new_element.outerHTML);
+
+        this.show_dom_element(new_element, "before CALL");
+
+        this.insert_dom_element_after(parent_element, existing_name, new_element);
+    }
+
+    this.insert_dom_element_after = function(parent_element, existing_name, new_element)
+    {
+        if (this.show_output)
+            console.log("*** insert_dom_value_after: parent_element: %s existing_name: %s new_element: %s", 
+            parent_element.tagName, existing_name, new_element.tagName);
+
+        let existing_element = parent_element.querySelector(existing_name);
         if (!existing_element)
         {
-            console.error("Element to insert after not found: %s", existing);
+            console.error("Element to insert after not found: %s", existing_name);
             //this.show_dom_element(parent_element, "PARENT_ELEMENT");
             return;
         }
-    
-        let new_element = document.createElementNS('', name);
-        new_element.innerHTML = value;
-        //this.show_dom_element(new_element, "NEW ELEMENT");
-        existing_element.insertAdjacentElement("afterend", new_element);
+
+        let element_to_insert = this.clone_dom_element(new_element);
+
+        existing_element.insertAdjacentElement("afterend", element_to_insert);
         //this.show_dom_element(parent_element, "PARENT AFTER INSERT");
-        //console.log("*** innerHTML: '%s'", new_element.innerHTML);
     }
 
-    this.remove_dom_element = function(parent_element, name)
+    this.append_dom_element = function(parent_element, new_element)
+    {
+        if (this.show_output)
+            console.log("*** append_dom_element: parent_element: %s new_element:  %s ", 
+                parent_element.tagName, new_element.tagName);
+        
+        //this.show_dom_element(new_element, "NEW ELEMENT");
+        
+        let element_to_append = this.clone_dom_element(new_element);
+        parent_element.AppendElement(element_to_append);
+        //this.show_dom_element(parent_element, "PARENT AFTER APPEND");
+    }
+
+    this.remove_dom_element_by_name = function(parent_element, name)
     {
         let sub_element = parent_element.querySelector(name);
         if (!sub_element)
@@ -192,6 +235,25 @@ osmd_transpose.initialize = function()
 
         sub_element.remove();
         
+    }
+    
+    this.clone_dom_element = function(element)
+    {
+        new_element = element.cloneNode(true);
+        return (new_element);
+    
+    }
+
+    this.show_object = function(object, what)
+    {
+        if (!what)
+            what = "Object";
+        let sout;
+        if (object)
+            sout = JSON.stringify(object).replace(/,"/g, "\n\"");
+        else
+            sout = "undefined";
+        console.log("%s: %s %s", what, sout, this.get_caller());
     }
 
     // f♭ – c♭ – g♭ – d♭ – a♭ – e♭ – b♭ – f – c – g – d – a – e – b – f# – c# – g# – d# – a# – e# – b# 
@@ -327,12 +389,12 @@ osmd_transpose.initialize = function()
     this.clef_positions["C"][5] = {middle_letter: "F", middle_octave: 3, middle_number: 3};
 
     // all measures
-    this.measure_data_array = [];
+    this.part_array = {};
 
-    this.transpose_pitch = function(old_step, old_alter, old_octave) 
+    this.transpose_pitch = function(what, old_step, old_alter, old_octave) 
     {
         let parameters = this.parameters;
-        let show_output = parameters.show_output;
+        let show_output = this.show_output;
 
         // move to local variables for easier access
         let old_key = this.old_key;
@@ -415,12 +477,13 @@ osmd_transpose.initialize = function()
         else if (new_alter > 0)
             new_accidental = "sharp";
 
-        if (show_output)
-            console.log(`transpose_pitch: \n` +
-                        `     old_note: %s old_step: %s old_step_number: %s old_alter; %s old_octave: %s \n` + 
-                        `     new_note: %s new_step: %s new_step_number: %s new_alter: %s new_octave: %s new_accidental: %s`, 
-                old_note, old_step, old_step_number, old_alter, old_octave, 
-                new_note, new_step, new_step_number, new_alter, new_octave, new_accidental);
+        //if (show_output)
+            console.log(`transpose_pitch: %s %s \n` +
+                        `     old_note: %s old_alter; %s old_octave: %s \n` + 
+                        `     new_note: %s new_alter: %s new_octave: %s new_accidental: %s`, 
+                what, this.get_caller(), 
+                old_note, old_alter, old_octave, 
+                new_note, new_alter, new_octave, new_accidental);
                 
         transposed_note = {
             "new_note": new_note,
@@ -447,38 +510,32 @@ osmd_transpose.initialize = function()
 
     this.transpose_xml = function(parameters, xml_string_in)
     {
+        if (parameters.transpose_key == "None") {
+            return(xml_string_in);
+        }
         this.parameters = parameters;
-        let show_output = parameters.show_output;
+        this.show_output = parameters.show_output;
+        let show_output = this.show_output;
         //console.log("show_output: %s (%s)", show_output, show_output? "T" : "F");
 
-        // for testing
-        let rawXml = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-            <note default-x="294.17" default-y="-30.00">
-                <chord/>
-                <pitch>
-                <step>B</step>
-                <alter>-1</alter>
-                <octave>2</octave>
-                </pitch>
-                <duration>1</duration>
-                <voice>1</voice>
-                <type>eighth</type>
-                <stem>up</stem>
-            </note>`
-
-        rawXml = xml_string_in;
+        this.xml_string = xml_string_in;    // input string
 
         // save the first two lines of the file to put onto output.
 
-        let lines = rawXml.split("\n");
-        let xml_header = lines[0] + "\n" + lines[1] + "\n";
+        // find line with <score
+        let ipos = this.xml_string.indexOf("<score");
+        if (ipos < 0)
+        {
+            console.error("<score not found in xml file");
+        }
+        let xml_header = this.xml_string.substr(0, ipos);
 
-        //lines = null;
+        console.log("XML_HEADER: %s", xml_header);
 
         let dom_object;
 
         const parser = new DOMParser();
-        dom_object = parser.parseFromString(rawXml, 'application/xml');
+        dom_object = parser.parseFromString(this.xml_string, 'application/xml');
 
         this.transpose_dom_object(parameters, dom_object);
 
@@ -488,14 +545,18 @@ osmd_transpose.initialize = function()
 
         xml_out = xml_header + xml_transposed;
 
+        //console.log("XML_OUT %s", xml_out);
+
         return(xml_out);
 
     }
 
     this.transpose_dom_object = function(parameters, dom_object)
     {
-        this.parameters = parameters;
-        let show_output = parameters.show_output;
+        this.parameters = parameters;    
+        this.show_output = parameters.show_output;
+        let show_output = this.show_output;
+
         //console.log("show_output: %s (%s)", show_output, show_output? "T" : "F");
 
     // 'var' is for debugging, we will but it into a different type later
@@ -524,10 +585,10 @@ osmd_transpose.initialize = function()
     let count = 0;  // only process a few lines for testing
 
 
-    let top_element = dom_object.firstElementChild; // score-partwise
+    let score_partwise_element = dom_object.firstElementChild; // score-partwise
     
-    let top_children = top_element.children;
-    //console.log("top_element: %s top children: %s", top_element.tagName, top_children.length);
+    let top_children = score_partwise_element.children;
+    //console.log("score_partwise_element: %s top children: %s", score_partwise_element.tagName, top_children.length);
     for (itop = 0; itop < top_children.length; itop++)
     {
     score_element = top_children[itop];
@@ -537,6 +598,12 @@ osmd_transpose.initialize = function()
     {
       case "part":
       part_element = score_element;
+
+      // <part id="P2">
+      let part_id = part_element.getAttribute("id");
+      this.part_array[part_id] = {measure_data_array: []};
+      let measure_data_array = this.part_array[part_id].measure_data_array;
+      
 
       part_children = part_element.children;
       //console.log("PART children: %s", part_children.length);
@@ -554,7 +621,7 @@ osmd_transpose.initialize = function()
                 if (show_output)
                     console.log("CASE: %s", part_child.tagName);
                 let measure_element = part_child;
-                measure_number++;
+                measure_number = measure_element.getAttribute("number");
                 if (show_output)
                 {
                     this.show_dom_element(measure_element, "MEASURE: " + measure_number);
@@ -599,6 +666,8 @@ osmd_transpose.initialize = function()
                             if (show_output)
                                 this.show_dom_element(attribute_element);
 
+                            let attributes = this.attributes;   // access in this scope
+
                             // get the attributes we want to remember
                             let attribute_children = attribute_element.children;
                             //console.log("CHILDREN: %s", attribute_children.length);
@@ -630,7 +699,7 @@ osmd_transpose.initialize = function()
                                         attributes.key.fifths = this.get_dom_element_value_numeric(key_element, "fifths");
                                         if (show_output)
                                             console.log("fifths: %s typeof: %s", attributes.key.fifths, typeof(attributes.key.fifths) );
-                                        attributes.key.mode = this.get_dom_element_value_numeric(key_element, "mode", SKIP_ERROR);
+                                        attributes.key.mode = this.get_dom_element_value_numeric(key_element, "mode", this.SKIP_ERROR);
 
                                         let line_of_fifths_c = this.line_of_fifths_numbers["C"];
                                         let old_key_number = attributes.key.fifths + line_of_fifths_c;
@@ -718,6 +787,117 @@ osmd_transpose.initialize = function()
                             break;
                             
                         case "harmony":
+                            if (show_output)
+                                console.log("CASE: %s", measure_child.tagName);
+                            let harmony_element = measure_child;
+
+                            this.show_dom_element(harmony_element, "harmony_element");
+
+                            let harmony_children = harmony_element.children;
+                            console.log("harmony CHILDREN: %s", harmony_children.length);
+                            
+                            for (let ii = 0; ii < harmony_children.length; ii++)
+                            {
+                                let harmony_child = harmony_children[ii];
+                                //console.log("harmony CHILD %s: %s", ii, harmony_child.tagName);
+
+                                switch (harmony_child.tagName) 
+                                {
+                                    case "root":
+                                        console.log("CASE: %s", harmony_child.tagName);
+                                        root_element = harmony_child;
+                                        this.show_dom_element(root_element, "root_element");
+                                        /***
+                                             <harmony print-frame="no">
+                                                <root>
+                                                <root-step>B</root-step>
+                                                <root-alter>-1</root-alter>
+                                                </root>
+                                                <bass>
+                                                <bass-step>G</bass-step>              
+                                                <root-alter>-1</root-alter>
+                                                </bass>
+                                                <kind text="ma7">major-seventh</kind>
+                                            </harmony>
+                                        ***/
+
+                                        this.show_dom_element(root_element, "root_element");
+                                        root_step = this.get_dom_element_value(root_element, "root-step");
+                                        root_alter = this.get_dom_element_value(root_element, "root-alter", this.SKIP_ERROR);
+
+                                        // octave is not used for harmony
+                                        let transposed_root = this.transpose_pitch("root_step", root_step, root_alter, 3);
+
+                                        this.change_dom_element_value(root_element, "root-step", transposed_root.new_step);
+                                        if (transposed_root.new_alter == 0)
+                                        {
+                                            if (root_alter)
+                                            {
+                                                this.remove_dom_element_by_name(root_element, "root-alter");
+                                            }
+                                        }
+                                        else if (root_alter)
+                                        {
+                                            this.change_dom_element_value(root_element, "root-alter", transposed_root.new_alter);
+                                        }
+                                        else
+                                        {
+                                            // this.insert_dom_value_after = function(parent_element, existing_name, new_element_ame, value)
+                                            this.insert_dom_value_after(root_element, "root-step", "root-alter", transposed_root.new_alter);    
+                                        }
+                                        this.show_dom_element(root_element, "root_element AFTER CHANGES");
+
+                                        break;
+
+                                    case "bass":
+                                        console.log("CASE: %s", harmony_child.tagName);
+                                        bass_element = harmony_child;
+                                        this.show_dom_element(bass_element);
+                                        /***
+                                             <harmony print-frame="no">
+                                                <bass>
+                                                <bass-step>B</bass-step>
+                                                <bass-alter>-1</bass-alter>
+                                                </bass>
+                                                <bass>
+                                                <bass-step>G</bass-step>              
+                                                <bass-alter>-1</bass-alter>
+                                                </bass>
+                                                <kind text="ma7">major-seventh</kind>
+                                            </harmony>
+                                        ***/
+
+                                        bass_step = this.get_dom_element_value(bass_element, "bass-step");
+                                        bass_alter = this.get_dom_element_value(bass_element, "bass-alter", this.SKIP_ERROR);
+
+                                        // octave is not used for harmony
+                                        let transposed_bass = this.transpose_pitch("bass_step", bass_step, bass_alter, 3);
+                                        this.show_object(transposed_bass, "transposed_bass");
+
+                                        this.change_dom_element_value(bass_element, "bass-step", transposed_bass.new_step);
+                                        if (transposed_bass.new_alter == 0)
+                                        {
+                                            if (bass_alter)
+                                            {
+                                                this.remove_dom_element_by_name(bass_element, "bass-alter");
+                                            }
+                                        }
+                                        else if (bass_alter)
+                                        {
+                                            this.change_dom_element_value(bass_element, "bass-alter", transposed_bass.new_alter);
+                                        }
+                                        else
+                                        {
+                                            // this.insert_dom_value_after = function(parent_element, existing_name, new_element_ame, value)
+                                            this.insert_dom_value_after(bass_element, "bass-step", "root-alter", transposed_bass.new_alter);    
+                                        }
+                                        break; // end of bass
+                                }
+                            }
+
+                            this.show_dom_element(harmony_element, "harmony_element AFTER CHANGES");
+                            this.show_object(harmony_element, "harmony_element AFTER CHANGES");
+
                             break;
 
                         case "note":
@@ -734,8 +914,10 @@ osmd_transpose.initialize = function()
                             note = {index: note_index, rest: null, chord: null,  chord_index: null, first_chord_note: false,
                                 pitch: null, duration: null, 
                                 instrument: null, voice: 0, type: null, dot: null, accidental: null, stem: null, staff: 0,
-                                notations: null, lyric: null, beam_status_array: [], 
+                                notations: null, lyric: null, beam_index: null, beam_status: null, 
                                 note_element: note_element, pitch_element: null };
+
+                            
 
                             measure_data.note_data_array[note_index] = note;
 
@@ -760,9 +942,25 @@ osmd_transpose.initialize = function()
                                         beam_number = beam_element.getAttribute("number");
                                         beam_status = this.get_element_value(beam_element);
                                         
-                                        note.beam_status_array[beam_number] = beam_status;
+                                        note.beam_status = beam_status;
+
+                                        if (beam_status == "begin")
+                                        {
+                                            beam_index++;
+
+                                            measure_data.beam_data_array[beam_index] = {first_note: note.index, last_note: note.index,
+                                                above_count: 0, below_count: 0, beam_stem_direction: null};
+                                            if (show_output)
+                                                console.log("BEGIN beam_index: %s", beam_index);
+
+                                        }
+                                        // chord notes may be added to beam_array later
+                                        measure_data.beam_data_array[beam_index].last_note = note_index;
+                                        note.beam_index = beam_index;
+
                                         if (show_output)
-                                            console.log("beam_status_array[%s]: %s", beam_number, note.beam_status_array[beam_number]);
+                                            console.log("NOTE: %s BEAM beam_status: %s beam_index: %s", 
+                                                note.index, beam_status, beam_index);
                                         break;
                                             
                                     case "chord":
@@ -778,7 +976,7 @@ osmd_transpose.initialize = function()
                                             chord_index++; 
                                             chord_data = {index: chord_index, first_note: note_index - 1, last_note: note_index,
                                                 notes: 0, max_offset: null, min_offset: null, 
-                                                new_stem_direction: null};
+                                                chord_stem_direction: null};
                                             measure_data.chord_data_array[chord_index] = chord_data;
                                             measure_data.note_data_array[note_index - 1].chord = true;
                                             measure_data.note_data_array[note_index - 1].chord_index = chord_index;
@@ -795,7 +993,7 @@ osmd_transpose.initialize = function()
                                         break;
 
                                     case "duration":
-                                        note.dot = this.get_element_value_numeric(note_child);
+                                        note.duration = this.get_element_value_numeric(note_child);
                                         break;
 
                                     case "instrument":
@@ -819,11 +1017,11 @@ osmd_transpose.initialize = function()
                                         note.pitch = {};
 
                                         note.pitch.step = this.get_dom_element_value(note.pitch_element, "step");
-                                        note.pitch.alter = this.get_dom_element_value_numeric(note.pitch_element, "alter", SKIP_ERROR); // returns 0 if not found
+                                        note.pitch.alter = this.get_dom_element_value_numeric(note.pitch_element, "alter", this.SKIP_ERROR); // returns 0 if not found
                                         note.pitch.octave = this.get_dom_element_value_numeric(note.pitch_element, "octave");
                                         // current accidental is store in note
 
-                                        note.transposed = this.transpose_pitch(note.pitch.step, note.pitch.alter, note.pitch.octave);
+                                        note.transposed = this.transpose_pitch("note.pitch.step", note.pitch.step, note.pitch.alter, note.pitch.octave);
 
                                         if (show_output)
                                             console.log("note.accidental: %s", note.accidental);
@@ -831,18 +1029,22 @@ osmd_transpose.initialize = function()
                                         break;
 
                                     case "rest":
+                                        note.rest_element = note_child;
                                         if (show_output)
                                             console.log("REST: note_index: %s ", note_index)
                                         let rest_element = note_child;
                                         // see if these is a position for the rest
                                         note.rest = {set: true, display_step: null, display_step: null, transposed: null};
-                                        note.rest.display_step = this.get_dom_element_value(rest_element, "display-step", SKIP_ERROR);
+                                        note.rest.display_step = this.get_dom_element_value(rest_element, "display-step", this.SKIP_ERROR);
                                         if (note.rest.display_step)
                                         {
-                                            note.rest.display_octave = this.get_dom_element_value(rest_element, "display-octave", SKIP_ERROR);
-                                            note.rest.transposed = this.transpose_pitch(note.rest.display_step, 0, note.rest.display_octave);
-                                            // we do not transpose rest positions (yet)
+                                            note.rest.display_octave = this.get_dom_element_value(rest_element, "display-octave", this.SKIP_ERROR);
+                                            note.rest.transposed = this.transpose_pitch("note.rest.display_step", note.rest.display_step, 0, note.rest.display_octave);
+                                            console.log("REST: display_step: %s octave: %s transposed_step: %s octave: %s",  
+                                                note.rest.display_step, note.rest.display_octave,
+                                                note.rest.transposed.new_step, note.rest.transposed.new_octave);
                                         }
+                                        
                                         break;
                                         
                                     case "time-modification":
@@ -859,6 +1061,9 @@ osmd_transpose.initialize = function()
                                     case "tie":
                                         break;
 
+                                    case "grace":
+                                        break;
+
                                     case "type":
                                         note.type = this.get_element_value(note_child);
                                         break;
@@ -871,6 +1076,19 @@ osmd_transpose.initialize = function()
                                         break;
                                 }
                             } // end of note children
+
+                            // see if in beam as part of a chord
+                            if (note_index > 0 && note.chord)
+                            {
+                                old_note = measure_data.note_data_array[note_index - 1];
+                                if (old_note.beam_index)
+                                {
+                                    note.beam_status = "chord in beam";
+                                    note.beam_index = old_note.beam_index;
+                                   // console.log("NOTE: %s CHORD IN BEAM: beam_index: %s", note.index, note.beam_index);
+                                }
+                            }
+
 
                             // we need to track accidentals by both voice and octave
                             // voice_data_array has the last_note for each voice
@@ -895,37 +1113,7 @@ osmd_transpose.initialize = function()
                                 console.log("STAFF: %s VOICE: %s min_voice: %s max_voice: %s", 
                                     note.staff, note.voice, staff_data.min_voice, staff_data.max_voice);
 
-                            // beam data
-                            // lets only combine notes in first beam for now
-                            if (note.beam_status_array[1])
-                            {
-                                beam_status = note.beam_status_array[1];
-
-                                if (beam_status == "begin")
-                                {
-                                    beam_index++;
-
-                                    measure_data.beam_data_array[beam_index] = {notes: 0, first_note: note.index, last_note: note.index,
-                                        above_count: 0, below_count: 0, new_stem_direction: null};
-                                    if (show_output)
-                                        console.log("START beam_data_array[%s]", beam_index);
-
-                                }
-                                beam_data = measure_data.beam_data_array[beam_index];
                             
-                                beam_data.notes++;
-                                beam_data.last_note = note.index;
-
-                                note_offset = this.get_note_offset(note);
-                                if (note_offset > 0)
-                                    beam_data.above_count++;
-                                else
-                                    beam_data.below_count++;
-                                if (show_output)
-                                    console.log("beam_index: %s COUNT BEAM above: %s below: %s", 
-                                        beam_index, beam_data.above_count, beam_data.below_count);
-                            }
-
                             note_index++;
                             break;
 
@@ -943,24 +1131,65 @@ osmd_transpose.initialize = function()
                 } // end loop measure children
 
                 // get stem direction for beams
+
+                // beam data
+                for (let inote = 0; inote < measure_data.note_data_array.length; inote++)
+                {
+                    note =  measure_data.note_data_array[inote];
+                    if (note.rest)
+                    {
+                        //if (show_output)
+                            console.log("REST: inote: %s display_step: %s", inote, note.rest.display_step);
+                        if (note.rest.display_step)
+                        {
+                            console.log("Update display-step: %s display-octave: %s --> %s %s", 
+                                note.rest.display_step, note.rest.display_octave,
+                                note.rest.transposed.new_step, note.rest.transposed.new_octave);
+                            this.change_dom_element_value(note.rest_element, "display-octave", note.rest.transposed.new_octave);
+                            this.change_dom_element_value(note.rest_element, "display-step", note.rest.transposed.new_step);
+                        }
+                        continue;   // processed
+                    }
+
+                    if (note.beam_index)
+                    {
+ 
+                        beam_data = measure_data.beam_data_array[note.beam_index];
+                    
+                        beam_data.last_note = note.index;
+
+                        // ADH - currently this gets only the first note of a chord
+                        note_offset = this.get_note_offset(note);
+                        if (note_offset > 0)
+                            beam_data.above_count++;
+                        else
+                            beam_data.below_count++;
+                        if (show_output)
+                            console.log("NOTE: %s beam_index: %s beam_status: %s COUNT BEAM above: %s below: %s", 
+                                note.index, beam_index, beam_status, beam_data.above_count, beam_data.below_count);
+                    }
+                }
+
+
+                // get stem direction for beams from number of notes above or below the center
                 for (let ibeam = 1; ibeam < measure_data.beam_data_array.length; ibeam++)
                 {
                     let  beam_data = measure_data.beam_data_array[ibeam];
                     if (beam_data.above_count > beam_data.below_count)
                     {
-                        beam_data.new_stem_direction = "down"; 
+                        beam_data.beam_stem_direction = "down"; 
                     }
                     else if (beam_data.above_count < beam_data.below_count)
                     {
-                        beam_data.new_stem_direction = "up"; 
+                        beam_data.beam_stem_direction = "up"; 
                     }
                     else
                     {
-                        beam_data.new_stem_direction = "equal";  // use previous note 
+                        beam_data.beam_stem_direction = "equal";  // use previous note 
                     }
                     if (show_output)
-                        console.log("USE BEAM above: %s below: %s beam_data.new_stem_direction: %s", 
-                            beam_data.above_count, beam_data.below_count, beam_data.new_stem_direction);
+                        console.log("ibeam: %s USE BEAM above: %s below: %s beam_data.beam_stem_direction: %s", 
+                            ibeam, beam_data.above_count, beam_data.below_count, beam_data.beam_stem_direction);
                 }
 
                 // lets get the notes for the chords
@@ -1004,16 +1233,16 @@ osmd_transpose.initialize = function()
                     // get stem direction
                     if (Math.abs(chord_data.max_offset) > Math.abs(chord_data.min_offset))
                     {
-                        chord_data.new_stem_direction = "down"; // most notes are above the center - point down
+                        chord_data.chord_stem_direction = "down"; // most notes are above the center - point down
                     }
                     else
                     {
                         // we could handle "equal" differently
-                        chord_data.new_stem_direction = "up"; 
+                        chord_data.chord_stem_direction = "up"; 
                     }
                     if (show_output)
-                        console.log("CHORD index: %s max: %s min: %s new_stem_direction: %s", 
-                            note.chord_index, chord_data.max_offset, chord_data.min_offset, chord_data.new_stem_direction);
+                        console.log("CHORD index: %s max: %s min: %s chord_stem_direction: %s", 
+                            note.chord_index, chord_data.max_offset, chord_data.min_offset, chord_data.chord_stem_direction);
                 }
 
                 // we need to get note_element again, pr store it in a new 'note_element_array' for each measure
@@ -1031,14 +1260,27 @@ osmd_transpose.initialize = function()
                         continue;   // skip rests
                     }
                     note_element = note.note_element;   // saved with note
+
+                    staff_data = measure_data.staff_data_array[note.staff];
+
                     if (!staff_data.voice_data_array[note.voice])
                     {
                         staff_data.voice_data_array[note.voice] = {last_direction: null};
                     }
                     voice_data = staff_data.voice_data_array[note.voice];
 
+                    if (show_output)
+                        console.log("NOTE: %s staff: %s voice: %s last_direction: %s", note.index, note.staff, note.voice, voice_data.last_direction);
+
+                    // 1, If multiple voices - put one voice up and all others
+                    // 2. if in a beam, put all notes in the beam in the ame direction
+                    // 3. if ia a chord, count notes above or below the center line
+                    // 4. look at individual note.
+
                     if (staff_data.min_voice && staff_data.min_voice < staff_data.max_voice)
                     {
+                        if (show_output)
+                            console.log("Multiple Voices");
                         // if there is more than one voice in measure and staff, point stems by voice
                         if (note.voice >  staff_data.min_voice)
                         {
@@ -1054,11 +1296,35 @@ osmd_transpose.initialize = function()
                                 console.log("USE VOICE: %s STEM UP", note.voice);
                         }
                     }
+                    else if (note.beam_index)
+                    {
+                         // lets only combine notes in first beam for now
+                        
+                        beam_data = measure_data.beam_data_array[note.beam_index];
+                        //this.show_object(beam_data, "beam_data");
+                        if (show_output)
+                            console.log("NOTE: %s IN BEAM: beam_index: %s beam_data.beam_stem_direction: %s", note.index, beam_index, beam_data.beam_stem_direction);
+                       
+                        if (beam_data.beam_stem_direction == "equal")
+                        {
+                            // set to last not direction
+                            // use stem directiomn from above
+
+                        }     
+                        else
+                        {  
+                            new_stem_direction =  beam_data.beam_stem_direction;
+                        }
+                        if (show_output)
+                            console.log("NOTE: %s beam_index: s: beam_stem_direction: %s new_stem_direction: %s", 
+                                note.index, note.beam_index, beam_data.beam_stem_direction, new_stem_direction);
+                        
+                    }
                     else if (note.chord_index !== null)
                     {
                         // chord - get highest and lowest position of notes in chord
                         if (show_output)
-                            console.log("NOTE: %s chord_data_array[note.chord_index = %s]  first_chord_note: %s", 
+                            console.log("IN CHORD: NOTE: %s chord_data_array[note.chord_index = %s]  first_chord_note: %s", 
                                 note.index, note.chord_index, note.first_chord_note);
                         let chord_data = measure_data.chord_data_array[note.chord_index];
 
@@ -1110,30 +1376,11 @@ osmd_transpose.initialize = function()
                             console.log("note_offset: %s note_position: %s new_stem_direction: %s", note_offset, note_position, new_stem_direction);
                     }
 
-                    // lets only combine notes in first beam for now
-                    if (note.beam_status_array[1])
-                    {
-                        beam_status = note.beam_status_array[1];
-                        if (show_output)
-                            console.log("beam_index: %s", beam_index);
-                        beam_data = measure_data.beam_data_array[beam_index];
-                        //this.show_object(beam_data, "beam_data");
-                       
-                        if (beam_data.new_stem_direction == "equal")
-                        {
-                            // set to last not direction
-                            beam_data.new_stem_direction = new_stem_direction; // dstem directiomn from above
-
-                        }       
-                        new_stem_direction =  beam_data.new_stem_direction;
-                        if (show_output)
-                            console.log("USE BEAM above: %s below: %s new_stem_direction: %s", 
-                                beam_data.above_count, beam_data.below_count, new_stem_direction);
-                        
-                    }
+                   
+                    
 
                     if (show_output)
-                        console.log("USE new_stem_direction: %s", new_stem_direction);
+                        console.log("NOTE: %s USE new_stem_direction: %s", note.index, new_stem_direction);
                     note.new_stem_direction = new_stem_direction;    
  
                     voice_data.last_direction = note.new_stem_direction;
@@ -1155,7 +1402,8 @@ osmd_transpose.initialize = function()
                             if (note.pitch.alter == 0)
                             {
                                 // there was no existing alter element, so add the new one after 'step'
-                                this.insert_dom_element_after(note.pitch_element, "step", "alter", note.transposed.new_alter);
+                                // this.insert_dom_value_after = function(parent_element, existing_name, new_element_ame, value)
+                                this.insert_dom_value_after(note.pitch_element, "step", "alter", note.transposed.new_alter);
                             }
                             else
                             {
@@ -1166,7 +1414,7 @@ osmd_transpose.initialize = function()
                         else if (note.pitch.alter != 0)
                         {
                             // remove element if it exists already
-                            this.remove_dom_element(note.pitch_element, "alter");   
+                            this.remove_dom_element_by_name(note.pitch_element, "alter");   
 
                         }
 
@@ -1211,12 +1459,21 @@ osmd_transpose.initialize = function()
                         if (!note.accidental && accidental_to_use != "")
                         {
                             // there was no existing accidental element, so add the new one at end
-                            //console.log("*** INSERT ACCIDENTAL ***: %s ***", accidental_to_use);
-                            
+                            console.log("*** INSERT ACCIDENTAL ***: %s ***", accidental_to_use);
+                            //this.show_dom_element(note_element, "NOTE before accidental insert");
+                            console.log("note.dot: %s", note.dot);
                             if (note.dot)
-                                this.insert_dom_element_after(note_element, "dot", "accidental", accidental_to_use);
+                            {   
+                                // this.insert_dom_value_after = function(parent_element, existing_name, new_element_ame, value)
+                                this.insert_dom_value_after(note_element, "dot", "accidental", accidental_to_use);
+                            }
                             else
-                                this.insert_dom_element_after(note_element, "type", "accidental", accidental_to_use);
+                            {
+                                // this.insert_dom_value_after = function(parent_element, existing_name, new_element_ame, value)
+                                this.insert_dom_value_after(note_element, "type", "accidental", accidental_to_use);
+                            }
+                            
+                            //this.show_dom_element(note_element, "NOTE after accidental insert");
                             //throw("INSERT ACCIDENTAL");
                         }
                         else if (note.accidental && accidental_to_use != "")
@@ -1232,7 +1489,7 @@ osmd_transpose.initialize = function()
                             // remove element if it exists already
                             //console.log("*** REMOVE ACCIDENTAL ***");
                             //this.show_dom_element(note_element);
-                            this.remove_dom_element(note_element, "accidental");   
+                            this.remove_dom_element_by_name(note_element, "accidental");   
                             //this.show_dom_element(note_element, "NOTE ELEMENT AFTER");
                            //throw("REMOVE ACCIDENTAL");
                         }
@@ -1249,67 +1506,7 @@ osmd_transpose.initialize = function()
 
                 break;
 
-                case "root":
-                    //console.log("CASE: %s", part_child.tagName);
-                    //root_element = part_child;
-                    //this.show_dom_element(root_element);
-                    /***
-                         <harmony print-frame="no">
-                            <root>
-                            <root-step>B</root-step>
-                            <root-alter>-1</root-alter>
-                            </root>
-                            <bass>
-                            <bass-step>G</bass-step>              
-                            <root-alter>-1</root-alter>
-                            </bass>
-                            <kind text="ma7">major-seventh</kind>
-                        </harmony>
-                    ***/
-
-                    //root_step = this.get_dom_element_value(root_element, "root-step");
-                    //root_alter = this.get_dom_element_value(root_element, "root-alter");
-
-                    // octave is not used for harmony
-                    //let transposed_root = this.transpose_pitch(root_step, root_alter, 3);
-
-                    //this.change_dom_element_value(root_element, "step", transposed_root.step);
-                    //if (transposed_root.alter == 0)
-                    //    transposed_root.alter = ""; // delete entry if it is present
-                    //this.change_dom_element_value(root_element, "alter", transposed_root.alter);
-
-                    break;
-
-                case "bass":
-                    console.log("CASE: %s", part_child.tagName);
-                    bass_element = part_child;
-                    this.show_dom_element(bass_element);
-                    /***
-                         <harmony print-frame="no">
-                            <bass>
-                            <bass-step>B</bass-step>
-                            <bass-alter>-1</bass-alter>
-                            </bass>
-                            <bass>
-                            <bass-step>G</bass-step>              
-                            <bass-alter>-1</bass-alter>
-                            </bass>
-                            <kind text="ma7">major-seventh</kind>
-                        </harmony>
-                    ***/
-
-                    bass_step = this.get_dom_element_value(bass_element, "bass-step");
-                    bass_alter = this.get_dom_element_value(bass_element, "bass-alter");
-
-                    // octave is not used for harmony
-                    let transposed_bass = this.transpose_pitch(bass_step, bass_alter, 3);
-
-                    this.change_dom_element_value(bass_element, "step", transposed_bass.step);
-                    if (transposed_bass.alter == 0)
-                        transposed_bass.alter = ""; // delete entry if it is present
-                    this.change_dom_element_value(bass_element, "alter", transposed_bass.alter);
-
-                    break; // end of bass
+                
 
             default: 
                 console.log("part_child element note in switch: %s", part_child.tagName)
@@ -1349,13 +1546,13 @@ osmd_transpose.initialize = function()
     {
         //console.log("get_note_offset %s", this.get_caller());
         //this.show_object(note, "note");
-        if (attributes.clef[note.staff])
+        if (this.attributes.clef[note.staff])
         {
-            clef = attributes.clef[note.staff];
+            clef = this.attributes.clef[note.staff];
         }
         else
         {
-            clef = attributes.clef[0];    // MuseScore does not store clefs by staff number
+            clef = this.attributes.clef[0];    // MuseScore does not store clefs by staff number
         }
         note_offset = (note.transposed.new_octave - clef.middle_octave) * 7 + this.step_number[note.transposed.new_step] - clef.middle_number;
         if (this.show_output)
@@ -1394,10 +1591,5 @@ osmd_transpose.initialize = function()
     }
 
 }
-
-osmd_transpose.initialize();
-
-var measure_data_array = osmd_transpose.measure_data_array; // for debugging
-var attributes = osmd_transpose.attributes;
 
   
